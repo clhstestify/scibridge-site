@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -17,10 +17,31 @@ import { useProgress } from './hooks/useProgress';
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { progress, markCompleted, resetProgress } = useProgress();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    try {
+      const stored = window.localStorage.getItem('scibridge-auth-user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      return null;
+    }
+  });
 
-  const handleLogin = ({ name }) => {
-    setUser({ name });
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (user) {
+      window.localStorage.setItem('scibridge-auth-user', JSON.stringify(user));
+    } else {
+      window.localStorage.removeItem('scibridge-auth-user');
+    }
+  }, [user]);
+
+  const handleAuthSuccess = (profile) => {
+    setUser(profile);
   };
 
   const handleLogout = () => {
@@ -56,7 +77,7 @@ const App = () => {
           <Route path="/quizzes" element={<QuizzesPage />} />
           <Route
             path="/forum"
-            element={<ForumPage user={user} onLogin={handleLogin} onLogout={handleLogout} />}
+            element={<ForumPage user={user} onAuthSuccess={handleAuthSuccess} onLogout={handleLogout} />}
           />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/about" element={<AboutPage />} />

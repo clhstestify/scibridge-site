@@ -48,7 +48,7 @@ const HomePage = () => {
           <h2 className="text-2xl font-display font-semibold text-brand-dark">Practice English with classmates</h2>
           <p className="mt-3 max-w-3xl text-sm text-slate-600">
             Join the SciBridge Forum to post study updates, ask questions in English, and support other students in Physics,
-            Chemistry, Biology, and Earth Science. You will need the classroom code from your teacher to participate.
+            Chemistry, Biology, and Earth Science. Create an account, verify your email, and log in to share your voice safely.
           </p>
           <Link
             to="/forum"
