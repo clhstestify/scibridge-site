@@ -54,7 +54,7 @@ const App = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col text-slate-100">
       <Navbar onSearch={setSearchQuery} user={user} onLogout={handleLogout} />
       <main className="flex-1 pb-20">
         <Routes>

@@ -28,15 +28,15 @@ const SubjectsPage = ({ query, setQuery, progress, onComplete, onResetProgress }
     : [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12 px-4">
+    <div className="mx-auto max-w-7xl space-y-12 px-4">
       <header className="space-y-4 pt-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand/80">
           {t('subjectsPage.eyebrow', 'Learn by topic')}
         </p>
-        <h1 className="text-3xl font-display font-semibold text-slate-900">
+        <h1 className="text-3xl font-display font-semibold text-white">
           {t('subjectsPage.heading', 'English core lessons and science extensions')}
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-300">
           {t(
             'subjectsPage.description',
             'Search the English for Science lessons first, then explore extension modules in Physics, Chemistry, Biology, and Earth Science. Explanations use simple academic English to support multilingual learners.'
@@ -55,8 +55,8 @@ const SubjectsPage = ({ query, setQuery, progress, onComplete, onResetProgress }
       <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
         <div className="space-y-6">
           {normalizedQuery && (
-            <section className="space-y-4 rounded-3xl border border-brand/30 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">
+            <section className="space-y-4 rounded-3xl border border-slate-800/70 bg-slate-900/70 p-6 shadow-lg shadow-slate-950/40">
+              <h2 className="text-lg font-semibold text-white">
                 {filteredLessons.length === 1
                   ? t('subjectsPage.resultsSingular', `Found {count} lesson`, { count: filteredLessons.length })
                   : t('subjectsPage.resultsPlural', `Found {count} lessons`, { count: filteredLessons.length })}
@@ -76,7 +76,7 @@ const SubjectsPage = ({ query, setQuery, progress, onComplete, onResetProgress }
           )}
 
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-white">
               {t('subjectsPage.browseHeading', 'Browse English core + science extensions')}
             </h2>
             <div className="grid gap-6 md:grid-cols-2">

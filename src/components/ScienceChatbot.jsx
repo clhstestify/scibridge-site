@@ -66,9 +66,9 @@ const ScienceChatbot = () => {
   };
 
   return (
-    <section className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900">{t('chatbot.title', 'Science Helper Chatbot')}</h3>
-      <p className="mt-1 text-sm text-slate-600">
+    <section className="flex h-full flex-col rounded-3xl border border-slate-800/70 bg-slate-900/70 p-6 shadow-lg shadow-slate-950/40">
+      <h3 className="text-lg font-semibold text-white">{t('chatbot.title', 'Science Helper Chatbot')}</h3>
+      <p className="mt-1 text-sm text-slate-300">
         {t('chatbot.description', 'Type a topic keyword and receive an easy English explanation.')}
       </p>
       <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
@@ -77,8 +77,8 @@ const ScienceChatbot = () => {
             key={index}
             className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
               message.sender === 'bot'
-                ? 'bg-brand-light/70 text-brand-dark'
-                : 'ml-auto bg-slate-900 text-white'
+                ? 'border border-brand/40 bg-brand/15 text-brand'
+                : 'ml-auto border border-slate-700 bg-slate-800/80 text-slate-100'
             }`}
           >
             {'text' in message
@@ -91,13 +91,13 @@ const ScienceChatbot = () => {
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+          className="flex-1 rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm text-slate-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
           placeholder={t('chatbot.placeholder', 'Ask about force, atoms, ecosystems...')}
           aria-label="Chat message"
         />
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-dark"
+          className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(56,189,248,0.25)] transition hover:bg-brand-dark"
         >
           {t('chatbot.send', 'Send')}
           <FiSend aria-hidden />
