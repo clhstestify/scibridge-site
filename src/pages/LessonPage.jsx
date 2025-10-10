@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { subjects } from '../data/lessons';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const LessonPage = ({ onComplete, progress }) => {
   const { subjectId, lessonId } = useParams();
+  const { t } = useLanguage();
 
   const { subject, lesson } = useMemo(() => {
     const subjectData = subjects.find((item) => item.id === subjectId);
@@ -14,45 +16,61 @@ const LessonPage = ({ onComplete, progress }) => {
   if (!subject || !lesson) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-        <h1 className="text-3xl font-display font-semibold text-slate-900">Lesson not found</h1>
+        <h1 className="text-3xl font-display font-semibold text-slate-900">
+          {t('lessonPage.notFoundTitle', 'Lesson not found')}
+        </h1>
         <Link to="/subjects" className="mt-6 inline-block rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white">
-          Back to subjects
+          {t('lessonPage.backToSubjects', 'Back to subjects')}
         </Link>
       </div>
     );
   }
 
   const isCompleted = Boolean(progress[lesson.id]);
+  const subjectTitle = t(['subjects', subject.id, 'title'], subject.title);
+  const lessonTitle = t(['lessons', subject.id, lesson.id, 'title'], lesson.title);
+  const lessonSummary = t(['lessons', subject.id, lesson.id, 'summary'], lesson.summary);
+  const keyVocabulary = t(['lessons', subject.id, lesson.id, 'keyVocabulary'], lesson.keyVocabulary);
+  const lessonContent = t(['lessons', subject.id, lesson.id, 'content'], lesson.content);
+  const practiceIdeas = t(['lessons', subject.id, lesson.id, 'practice'], t('lessonPage.practiceList', [
+    'Write the key vocabulary words in your science notebook. Add a short definition in English.',
+    'Summarize the lesson in three sentences. Focus on the main idea and an example.',
+    'Teach a friend using the animation. Explain each step using the new words.'
+  ]));
 
   return (
     <article className="mx-auto max-w-4xl space-y-10 px-4 py-10">
       <nav className="text-sm text-slate-500">
         <Link to="/subjects" className="text-brand hover:text-brand-dark">
-          Subjects
+          {t('lessonPage.breadcrumbSubjects', 'Subjects')}
         </Link>{' '}
         /{' '}
         <Link to={`/subjects/${subject.id}`} className="text-brand hover:text-brand-dark">
-          {subject.title}
+          {subjectTitle}
         </Link>{' '}
-        / <span className="text-slate-700">{lesson.title}</span>
+        / <span className="text-slate-700">{lessonTitle}</span>
       </nav>
       <header className="space-y-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">Lesson</p>
-        <h1 className="text-3xl font-display font-semibold text-slate-900">{lesson.title}</h1>
-        <p className="text-base text-slate-600">{lesson.summary}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">
+          {t('lessonPage.eyebrow', 'Lesson')}
+        </p>
+        <h1 className="text-3xl font-display font-semibold text-slate-900">{lessonTitle}</h1>
+        <p className="text-base text-slate-600">{lessonSummary}</p>
         <div className="flex flex-wrap gap-2 text-xs text-brand">
-          {lesson.keyVocabulary.map((word) => (
+          {keyVocabulary.map((word) => (
             <span key={word} className="rounded-full bg-brand-light/60 px-3 py-1 text-brand-dark">
               {word}
             </span>
           ))}
         </div>
       </header>
-      <img src={lesson.image} alt={lesson.title} className="w-full object-cover" />
+      <img src={lesson.image} alt={lessonTitle} className="w-full object-cover" />
       <section className="space-y-4">
-        <h2 className="text-xl font-display font-semibold text-slate-900">Step-by-step explanation</h2>
+        <h2 className="text-xl font-display font-semibold text-slate-900">
+          {t('lessonPage.stepsHeading', 'Step-by-step explanation')}
+        </h2>
         <div className="space-y-3 rounded-3xl bg-white p-6 shadow">
-          {lesson.content.map((paragraph, index) => (
+          {lessonContent.map((paragraph, index) => (
             <p key={index} className="text-sm leading-7 text-slate-700">
               {paragraph}
             </p>
@@ -61,14 +79,17 @@ const LessonPage = ({ onComplete, progress }) => {
       </section>
       <section className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3 rounded-3xl bg-slate-900 p-6 text-white">
-          <h2 className="text-lg font-semibold">Watch the mini lesson</h2>
+          <h2 className="text-lg font-semibold">{t('lessonPage.videoHeading', 'Watch the mini lesson')}</h2>
           <p className="text-sm text-slate-100">
-            Videos help you connect English words with science visuals. Use captions to support language learning.
+            {t(
+              'lessonPage.videoDescription',
+              'Videos help you connect English words with science visuals. Use captions to support language learning.'
+            )}
           </p>
           <div className="aspect-video overflow-hidden rounded-2xl">
             <iframe
               src={lesson.videoUrl}
-              title={`${lesson.title} video`}
+              title={`${lessonTitle} video`}
               className="h-full w-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -76,9 +97,11 @@ const LessonPage = ({ onComplete, progress }) => {
           </div>
         </div>
         <div className="space-y-3 rounded-3xl border border-brand/30 bg-white p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Animated concept</h2>
-          <p className="text-sm text-slate-600">Use the animation to observe the scientific process in motion.</p>
-          <img src={lesson.animationUrl} alt={`${lesson.title} animation`} className="h-64 w-full object-cover" />
+          <h2 className="text-lg font-semibold text-slate-900">{t('lessonPage.animationHeading', 'Animated concept')}</h2>
+          <p className="text-sm text-slate-600">
+            {t('lessonPage.animationDescription', 'Use the animation to observe the scientific process in motion.')}
+          </p>
+          <img src={lesson.animationUrl} alt={`${lessonTitle} animation`} className="h-64 w-full object-cover" />
           <button
             onClick={() => onComplete(lesson.id)}
             className={`w-full rounded-full px-4 py-3 text-sm font-semibold transition ${
@@ -87,16 +110,18 @@ const LessonPage = ({ onComplete, progress }) => {
                 : 'bg-brand text-white shadow hover:bg-brand-dark'
             }`}
           >
-            {isCompleted ? 'Lesson completed' : 'Mark lesson as completed'}
+            {isCompleted
+              ? t('lessonPage.completed', 'Lesson completed')
+              : t('lessonPage.markCompleted', 'Mark lesson as completed')}
           </button>
         </div>
       </section>
       <section className="rounded-3xl bg-brand-light/60 p-6">
-        <h2 className="text-lg font-semibold text-brand-dark">Practice ideas</h2>
+        <h2 className="text-lg font-semibold text-brand-dark">{t('lessonPage.practiceHeading', 'Practice ideas')}</h2>
         <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-slate-700">
-          <li>Write the key vocabulary words in your science notebook. Add a short definition in English.</li>
-          <li>Summarize the lesson in three sentences. Focus on the main idea and an example.</li>
-          <li>Teach a friend using the animation. Explain each step using the new words.</li>
+          {practiceIdeas.map((idea, index) => (
+            <li key={index}>{idea}</li>
+          ))}
         </ul>
       </section>
     </article>

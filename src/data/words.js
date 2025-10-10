@@ -5,6 +5,7 @@
  */
 export const scienceWords = [
   {
+    id: 'hypothesis',
     term: 'hypothesis',
     definition:
       'An idea or explanation based on known facts that scientists still need to test to discover if it is true.',
@@ -12,6 +13,7 @@ export const scienceWords = [
     source: "Oxford Learner's Dictionaries"
   },
   {
+    id: 'photosynthesis',
     term: 'photosynthesis',
     definition:
       'The process that lets plants use energy from sunlight to make their own food.',
@@ -19,18 +21,21 @@ export const scienceWords = [
     source: 'Cambridge Dictionary'
   },
   {
+    id: 'velocity',
     term: 'velocity',
     definition: 'The speed at which something moves in a particular direction.',
     example: 'The car has a velocity of 60 kilometers per hour to the north.',
     source: 'Cambridge Dictionary'
   },
   {
+    id: 'molecule',
     term: 'molecule',
     definition: 'The smallest unit of a substance that is made of two or more atoms joined together.',
     example: 'A water molecule has two hydrogen atoms and one oxygen atom.',
     source: "Oxford Learner's Dictionaries"
   },
   {
+    id: 'erosion',
     term: 'erosion',
     definition: 'The gradual wearing away of rock or soil by wind, water, or ice.',
     example: 'Ocean waves cause erosion that changes the shape of the coastline.',

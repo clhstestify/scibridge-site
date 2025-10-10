@@ -1,6 +1,8 @@
 import { FiSearch } from 'react-icons/fi';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const SearchBar = ({ query, setQuery, placeholder = 'Search topics or keywords', onSubmit }) => {
+  const { t } = useLanguage();
   const handleSubmit = (event) => {
     event.preventDefault();
     onSubmit?.(query);
@@ -16,15 +18,15 @@ const SearchBar = ({ query, setQuery, placeholder = 'Search topics or keywords',
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         type="search"
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={t('searchBar.placeholder', placeholder)}
+        aria-label={t('searchBar.placeholder', placeholder)}
         className="w-full bg-transparent text-sm focus:outline-none"
       />
       <button
         type="submit"
         className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-dark"
       >
-        Search
+        {t('searchBar.submit', 'Search')}
       </button>
     </form>
   );
