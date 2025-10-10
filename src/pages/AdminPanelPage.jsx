@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiAlertTriangle,
   FiCheckCircle,
   FiEdit,
+  FiExternalLink,
+  FiGlobe,
   FiLayers,
   FiShield,
   FiUserCheck,
   FiUsers
 } from 'react-icons/fi';
-import { WPAdminLayout, WPAdminCard, WPAdminStat } from '../components/wpadmin';
 import {
   createAnnouncement,
   createContest,
@@ -18,16 +19,116 @@ import {
   updateUserStatus
 } from '../services/adminService';
 
+const WORDPRESS_ADMIN_URL = (import.meta.env.VITE_WORDPRESS_ADMIN_URL || '').trim();
+
 const defaultAnnouncement = { title: '', message: '', audience: 'global' };
 const defaultContest = { name: '', description: '', deadline: '', audience: 'global' };
 const defaultPractice = { title: '', focusArea: '', description: '', resourceUrl: '', audience: 'global' };
 
 const sectionIds = {
-  overview: 'wpadmin-section-overview',
-  announcements: 'wpadmin-section-announcements',
-  contests: 'wpadmin-section-contests',
-  practice: 'wpadmin-section-practice',
-  people: 'wpadmin-section-people'
+  wordpress: 'wordpress-admin-section',
+  overview: 'admin-section-overview',
+  announcements: 'admin-section-announcements',
+  contests: 'admin-section-contests',
+  practice: 'admin-section-practice',
+  people: 'admin-section-people'
+};
+
+const WordPressAdminEmbed = ({ url }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const timeoutRef = useRef();
+
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+
+    if (!url) {
+      return undefined;
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setHasError(true);
+    }, 12000);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = undefined;
+      }
+    };
+  }, [url]);
+
+  const handleLoad = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
+    setHasError(false);
+    setIsLoaded(true);
+  };
+
+  if (!url) {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+        <p>
+          Provide a WordPress admin URL by setting
+          <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">
+            VITE_WORDPRESS_ADMIN_URL
+          </code>
+          in your environment. This enables the embedded WordPress dashboard for content management.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">WordPress admin</h2>
+          <p className="text-sm text-slate-600">
+            Manage posts, pages, plugins, and users on your connected WordPress site without leaving SciBridge.
+          </p>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 self-start rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          <FiExternalLink aria-hidden />
+          Open in new tab
+        </a>
+      </div>
+      <div className="relative h-[720px] bg-slate-100">
+        {!isLoaded && !hasError && (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">
+            Loading WordPress admin…
+          </div>
+        )}
+        {hasError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center text-sm text-red-600">
+            <FiAlertTriangle className="h-6 w-6" aria-hidden />
+            <p>
+              We couldn&apos;t load the WordPress dashboard. Confirm the URL is correct and that the site allows embedding its
+              admin panel inside an iframe.
+            </p>
+          </div>
+        )}
+        <iframe
+          key={url}
+          src={url}
+          title="WordPress admin"
+          className={`h-full w-full bg-white transition-opacity duration-300 ${
+            isLoaded && !hasError ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={handleLoad}
+          allow="clipboard-read; clipboard-write; fullscreen"
+        />
+      </div>
+    </div>
+  );
 };
 
 const AdminPanelPage = ({ user, onProfileUpdate }) => {
@@ -35,7 +136,7 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState('wordpress');
 
   const [announcementForm, setAnnouncementForm] = useState(defaultAnnouncement);
   const [contestForm, setContestForm] = useState(defaultContest);
@@ -241,10 +342,10 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
 
   const headline = useMemo(() => {
     if (isAdmin) {
-      return 'WPAdmin community command center';
+      return 'Administrative hub';
     }
     if (isTeacher) {
-      return 'WPAdmin teaching leadership hub';
+      return 'Teaching leadership hub';
     }
     return 'Admin panel';
   }, [isAdmin, isTeacher]);
@@ -262,31 +363,26 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
       {
         label: 'Community members',
         value: users.length,
-        tone: 'accent',
         hint: `${teachers} teachers · ${admins} admins`
       },
       {
         label: 'Announcements',
         value: announcements.length,
-        tone: 'default',
         hint: 'Shared English-language updates'
       },
       {
         label: 'Active contests',
         value: contests.length,
-        tone: 'success',
         hint: 'Learning challenges currently live'
       },
       {
         label: 'Practice sets',
         value: practiceSets.length,
-        tone: 'warning',
         hint: 'Guided science-language exercises'
       },
       {
         label: 'Active users',
         value: activeUsers,
-        tone: 'default',
         hint: `${users.length - activeUsers} awaiting action`
       }
     ];
@@ -294,6 +390,7 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
 
   const navItems = useMemo(
     () => [
+      { id: 'wordpress', label: 'WordPress admin', icon: FiGlobe },
       { id: 'overview', label: 'Overview', icon: FiLayers },
       { id: 'announcements', label: 'Announcements', icon: FiEdit, badge: announcements.length || undefined },
       { id: 'contests', label: 'Contests', icon: FiUsers, badge: contests.length || undefined },
@@ -328,409 +425,444 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
     );
   }
 
-  const sidebar = (
-    <>
-      <div className="wpadmin-sidebar__brand">
-        <span className="wpadmin-sidebar__logo">SciBridge WPAdmin</span>
-        <span className="wpadmin-sidebar__subtitle">Leadership console</span>
-      </div>
-      <nav className="wpadmin-sidebar__nav">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`wpadmin-sidebar__button ${isActive ? 'is-active' : ''}`}
-              onClick={() => handleSectionSelect(item.id)}
-            >
-              <Icon aria-hidden />
-              <span>{item.label}</span>
-              {item.badge ? <span className="wpadmin-sidebar__badge">{item.badge}</span> : null}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="wpadmin-sidebar__foot">
-        <p>
-          <strong>{user?.name ?? user?.email}</strong>
-          <br />
-          {role?.toUpperCase()} · {user?.organization || 'Global scope'}
-        </p>
-      </div>
-    </>
-  );
-
-  const header = (
-    <>
-      <div className="wpadmin-topbar">
-        <div>
-          <h1 className="wpadmin-topbar__title">{headline}</h1>
-          <p className="wpadmin-topbar__subtitle">
-            Coordinate English-first science instruction, manage community members, and publish announcements from one familiar
-            WordPress-style console.
-          </p>
-          {status === 'loading' && <p className="wpadmin-topbar__subtitle">Loading dashboard data…</p>}
-        </div>
-        <div className="wpadmin-topbar__meta">
-          <span className={`wpadmin-tag ${isAdmin ? 'wpadmin-tag--success' : 'wpadmin-tag--warning'}`}>
-            {isAdmin ? 'Admin' : 'Teacher'}
-          </span>
-          <span>{user.email}</span>
-        </div>
-      </div>
-      {errorMessage && (
-        <div className="wpadmin-message wpadmin-message--error" role="alert">
-          <FiAlertTriangle aria-hidden />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-      {successMessage && (
-        <div className="wpadmin-message wpadmin-message--success" role="status">
-          <FiCheckCircle aria-hidden />
-          <span>{successMessage}</span>
-        </div>
-      )}
-    </>
-  );
-
   return (
-    <WPAdminLayout sidebar={sidebar} header={header}>
-      <WPAdminCard
-        id={sectionIds.overview}
-        icon={FiLayers}
-        title="Insights overview"
-        description="Monitor your science learning community at a glance."
-      >
-        <dl className="wpadmin-stat-grid">
-          {stats.map((entry) => (
-            <WPAdminStat key={entry.label} label={entry.label} value={entry.value} tone={entry.tone} hint={entry.hint} />
-          ))}
-        </dl>
-      </WPAdminCard>
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-6xl px-4 py-10 lg:px-8">
+        <header className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">{headline}</h1>
+              <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                Review SciBridge community insights and jump straight into your connected WordPress admin dashboard.
+              </p>
+              {status === 'loading' && <p className="mt-1 text-sm text-slate-500">Loading dashboard data…</p>}
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <div className="font-semibold text-slate-800">{user?.name ?? user?.email}</div>
+              <div>{user.email}</div>
+              <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
+                {isAdmin ? 'Admin' : 'Teacher'}
+              </div>
+            </div>
+          </div>
+        </header>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1.1fr]">
-        <div className="grid gap-6">
-          <WPAdminCard
-            id={sectionIds.announcements}
-            icon={FiEdit}
-            title="Publish announcement"
-            description="Share timely English announcements across your learners."
-          >
-            <form onSubmit={handleAnnouncementSubmit} className="wpadmin-form-grid">
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Title</span>
-                <input
-                  type="text"
-                  value={announcementForm.title}
-                  onChange={(event) => setAnnouncementForm((previous) => ({ ...previous, title: event.target.value }))}
-                  className="wpadmin-input"
-                  placeholder="Weekly English immersion focus"
-                  required
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Message</span>
-                <textarea
-                  value={announcementForm.message}
-                  onChange={(event) => setAnnouncementForm((previous) => ({ ...previous, message: event.target.value }))}
-                  className="wpadmin-textarea"
-                  placeholder="Use friendly academic language to guide students."
-                  required
-                />
-              </label>
-              {isAdmin && (
-                <label className="wpadmin-form-group">
-                  <span className="wpadmin-label">Audience</span>
-                  <input
-                    type="text"
-                    value={announcementForm.audience}
-                    onChange={(event) => setAnnouncementForm((previous) => ({ ...previous, audience: event.target.value }))}
-                    className="wpadmin-input"
-                    placeholder="global or organization name"
-                  />
-                </label>
-              )}
-              <button type="submit" className="wpadmin-button" disabled={isSubmitting}>
-                <FiEdit aria-hidden />
-                Share announcement
-              </button>
-            </form>
-          </WPAdminCard>
-
-          <WPAdminCard
-            id={sectionIds.contests}
-            icon={FiUsers}
-            title="Launch contest or challenge"
-            description="Create science-language challenges and keep learners on schedule."
-          >
-            <form onSubmit={handleContestSubmit} className="wpadmin-form-grid">
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Contest name</span>
-                <input
-                  type="text"
-                  value={contestForm.name}
-                  onChange={(event) => setContestForm((previous) => ({ ...previous, name: event.target.value }))}
-                  className="wpadmin-input"
-                  placeholder="English Lab Journal Showcase"
-                  required
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Description</span>
-                <textarea
-                  value={contestForm.description}
-                  onChange={(event) => setContestForm((previous) => ({ ...previous, description: event.target.value }))}
-                  className="wpadmin-textarea"
-                  placeholder="Students submit a one-page explanation of a recent experiment in English."
-                  required
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Deadline (optional)</span>
-                <input
-                  type="date"
-                  value={contestForm.deadline}
-                  onChange={(event) => setContestForm((previous) => ({ ...previous, deadline: event.target.value }))}
-                  className="wpadmin-input"
-                />
-              </label>
-              {isAdmin && (
-                <label className="wpadmin-form-group">
-                  <span className="wpadmin-label">Audience</span>
-                  <input
-                    type="text"
-                    value={contestForm.audience}
-                    onChange={(event) => setContestForm((previous) => ({ ...previous, audience: event.target.value }))}
-                    className="wpadmin-input"
-                    placeholder="global or organization name"
-                  />
-                </label>
-              )}
-              <button type="submit" className="wpadmin-button" disabled={isSubmitting}>
-                <FiUsers aria-hidden />
-                Create contest
-              </button>
-            </form>
-          </WPAdminCard>
-
-          <WPAdminCard
-            id={sectionIds.practice}
-            icon={FiUserCheck}
-            title="Build English practice sets"
-            description="Connect vocabulary, grammar, and science concepts with curated resources."
-          >
-            <form onSubmit={handlePracticeSubmit} className="wpadmin-form-grid">
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Title</span>
-                <input
-                  type="text"
-                  value={practiceForm.title}
-                  onChange={(event) => setPracticeForm((previous) => ({ ...previous, title: event.target.value }))}
-                  className="wpadmin-input"
-                  placeholder="Climate change terminology drill"
-                  required
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Focus area</span>
-                <input
-                  type="text"
-                  value={practiceForm.focusArea}
-                  onChange={(event) => setPracticeForm((previous) => ({ ...previous, focusArea: event.target.value }))}
-                  className="wpadmin-input"
-                  placeholder="Biology · Scientific writing"
-                  required
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Description</span>
-                <textarea
-                  value={practiceForm.description}
-                  onChange={(event) => setPracticeForm((previous) => ({ ...previous, description: event.target.value }))}
-                  className="wpadmin-textarea"
-                  placeholder="Explain how learners should use this practice set to reinforce English-language science skills."
-                />
-              </label>
-              <label className="wpadmin-form-group">
-                <span className="wpadmin-label">Resource link (optional)</span>
-                <input
-                  type="url"
-                  value={practiceForm.resourceUrl}
-                  onChange={(event) => setPracticeForm((previous) => ({ ...previous, resourceUrl: event.target.value }))}
-                  className="wpadmin-input"
-                  placeholder="https://"
-                />
-              </label>
-              {isAdmin && (
-                <label className="wpadmin-form-group">
-                  <span className="wpadmin-label">Audience</span>
-                  <input
-                    type="text"
-                    value={practiceForm.audience}
-                    onChange={(event) => setPracticeForm((previous) => ({ ...previous, audience: event.target.value }))}
-                    className="wpadmin-input"
-                    placeholder="global or organization name"
-                  />
-                </label>
-              )}
-              <button type="submit" className="wpadmin-button" disabled={isSubmitting}>
-                <FiUserCheck aria-hidden />
-                Save practice set
-              </button>
-            </form>
-          </WPAdminCard>
+        <div className="mt-6 space-y-4">
+          {errorMessage && (
+            <div className="flex items-center gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+              <FiAlertTriangle className="h-5 w-5" aria-hidden />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+          {successMessage && (
+            <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+              <FiCheckCircle className="h-5 w-5" aria-hidden />
+              <span>{successMessage}</span>
+            </div>
+          )}
         </div>
 
-        <div className="grid gap-6">
-          <WPAdminCard
-            icon={FiEdit}
-            title="Latest announcements"
-            description="Track the English-language updates already shared with learners."
-          >
-            <div className="wpadmin-list">
-              {announcements.length === 0 && <p className="text-sm text-slate-600">No announcements yet.</p>}
-              {announcements.map((announcement) => (
-                <article key={announcement.id} className="wpadmin-list__item">
-                  <h3 className="font-semibold text-slate-900">{announcement.title}</h3>
-                  <p className="wpadmin-list__meta">
-                    {new Date(announcement.createdAt).toLocaleString('en-US', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}
-                    {' · '}Audience: {announcement.audience}
-                  </p>
-                  <p className="text-sm text-slate-700">{announcement.message}</p>
-                </article>
-              ))}
-            </div>
-          </WPAdminCard>
-
-          <WPAdminCard icon={FiUsers} title="Active contests" description="Monitor running contests and their deadlines.">
-            <div className="wpadmin-list">
-              {contests.length === 0 && <p className="text-sm text-slate-600">No contests created yet.</p>}
-              {contests.map((contest) => (
-                <article key={contest.id} className="wpadmin-list__item">
-                  <h3 className="font-semibold text-slate-900">{contest.name}</h3>
-                  <p className="wpadmin-list__meta">
-                    Audience: {contest.audience}
-                    {contest.deadline ? ` · Due ${contest.deadline}` : ''}
-                  </p>
-                  <p className="text-sm text-slate-700">{contest.description}</p>
-                </article>
-              ))}
-            </div>
-          </WPAdminCard>
-
-          <WPAdminCard
-            icon={FiUserCheck}
-            title="Practice sets"
-            description="Reference the resources you and other leaders have published."
-          >
-            <div className="wpadmin-list">
-              {practiceSets.length === 0 && <p className="text-sm text-slate-600">No practice sets created yet.</p>}
-              {practiceSets.map((practice) => (
-                <article key={practice.id} className="wpadmin-list__item">
-                  <h3 className="font-semibold text-slate-900">{practice.title}</h3>
-                  <p className="wpadmin-list__meta">
-                    Focus: {practice.focusArea} · Audience: {practice.audience}
-                  </p>
-                  {practice.description && <p className="text-sm text-slate-700">{practice.description}</p>}
-                  {practice.resourceUrl && (
-                    <a
-                      href={practice.resourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm font-semibold text-brand underline"
-                    >
-                      Open linked resource
-                    </a>
-                  )}
-                </article>
-              ))}
-            </div>
-          </WPAdminCard>
-        </div>
-      </div>
-
-      <WPAdminCard
-        id={sectionIds.people}
-        icon={FiShield}
-        title="Manage people"
-        description="Adjust permissions, update organizations, and toggle account access."
-      >
-        <div className="grid gap-4">
-          {users.length === 0 && <p className="text-sm text-slate-600">No members found yet.</p>}
-          {users.map((entry) => {
-            const currentRole = roleDrafts[entry.id] ?? entry.role;
-            const currentOrganization = orgDrafts[entry.id] ?? entry.organization ?? '';
-            const isTeacherDraft = currentRole === 'teacher';
-            return (
-              <div key={entry.id} className="wpadmin-user-card">
-                <div className="wpadmin-user-card__heading">
-                  <span className="wpadmin-user-card__name">{entry.name}</span>
-                  <span className="wpadmin-user-card__email">{entry.email}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className={`wpadmin-tag ${entry.status === 'active' ? 'wpadmin-tag--success' : 'wpadmin-tag--warning'}`}>
-                    {entry.status}
-                  </span>
-                  <span className="wpadmin-badge">Role: {entry.role}</span>
-                  {entry.organization && <span className="wpadmin-badge">Org: {entry.organization}</span>}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="wpadmin-form-group">
-                    <span className="wpadmin-label">Role</span>
-                    <select
-                      value={currentRole}
-                      onChange={(event) => setRoleDraft(entry.id, event.target.value)}
-                      className="wpadmin-select"
-                    >
-                      <option value="student">Student</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </label>
-                  {isTeacherDraft && (
-                    <label className="wpadmin-form-group">
-                      <span className="wpadmin-label">Organization</span>
-                      <input
-                        type="text"
-                        value={currentOrganization}
-                        onChange={(event) => setOrgDraft(entry.id, event.target.value)}
-                        className="wpadmin-input"
-                        placeholder="e.g., Green Valley High"
-                      />
-                    </label>
-                  )}
-                </div>
-                <div className="wpadmin-user-card__actions">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[220px,1fr]">
+          <aside className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <nav className="flex flex-col">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                return (
                   <button
+                    key={item.id}
                     type="button"
-                    className="wpadmin-button"
-                    onClick={() => handleRoleUpdate(entry)}
-                    disabled={isSubmitting}
+                    onClick={() => handleSectionSelect(item.id)}
+                    className={`flex items-center justify-between gap-3 px-4 py-3 text-left text-sm transition ${
+                      isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                    }`}
                   >
-                    <FiCheckCircle aria-hidden />
-                    Save role
+                    <span className="inline-flex items-center gap-2">
+                      <Icon aria-hidden />
+                      {item.label}
+                    </span>
+                    {item.badge ? (
+                      <span className="inline-flex min-w-[1.75rem] justify-center rounded-full bg-slate-200 px-2 text-xs font-semibold text-slate-700">
+                        {item.badge}
+                      </span>
+                    ) : null}
                   </button>
-                  <button
-                    type="button"
-                    className={`wpadmin-button ${entry.status === 'active' ? 'wpadmin-button--danger' : ''}`}
-                    onClick={() => handleStatusToggle(entry)}
-                    disabled={isSubmitting}
-                  >
-                    <FiShield aria-hidden />
-                    {entry.status === 'active' ? 'Ban user' : 'Reinstate'}
-                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          <main className="space-y-8">
+            <section id={sectionIds.wordpress} className="space-y-4">
+              <WordPressAdminEmbed url={WORDPRESS_ADMIN_URL} />
+              <p className="text-sm text-slate-600">
+                The embedded admin panel respects the permissions and authentication of your WordPress installation. If the
+                dashboard does not appear, ensure the site is accessible from the SciBridge domain and that embedding is
+                permitted (check the <code className="font-mono text-xs">X-Frame-Options</code> header).
+              </p>
+            </section>
+
+            <section id={sectionIds.overview} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Community insights</h2>
+                  <p className="text-sm text-slate-600">Monitor the status of your SciBridge learning community at a glance.</p>
+                </div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Updated automatically</div>
+              </div>
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {stats.map((entry) => (
+                  <div key={entry.label} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <dt className="text-sm font-medium text-slate-600">{entry.label}</dt>
+                    <dd className="mt-1 text-2xl font-semibold text-slate-900">{entry.value}</dd>
+                    <p className="mt-1 text-xs text-slate-500">{entry.hint}</p>
+                  </div>
+                ))}
+              </dl>
+            </section>
+
+            <section id={sectionIds.announcements} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Publish announcement</h2>
+                  <p className="text-sm text-slate-600">Share timely English updates across your learners.</p>
                 </div>
               </div>
-            );
-          })}
+              <form onSubmit={handleAnnouncementSubmit} className="mt-4 grid gap-4">
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Title
+                  <input
+                    type="text"
+                    value={announcementForm.title}
+                    onChange={(event) => setAnnouncementForm((previous) => ({ ...previous, title: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Weekly English immersion focus"
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Message
+                  <textarea
+                    value={announcementForm.message}
+                    onChange={(event) => setAnnouncementForm((previous) => ({ ...previous, message: event.target.value }))}
+                    className="min-h-[140px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Use friendly academic language to guide students."
+                    required
+                  />
+                </label>
+                {isAdmin && (
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Audience
+                    <input
+                      type="text"
+                      value={announcementForm.audience}
+                      onChange={(event) =>
+                        setAnnouncementForm((previous) => ({ ...previous, audience: event.target.value }))
+                      }
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="global or organization name"
+                    />
+                  </label>
+                )}
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                  disabled={isSubmitting}
+                >
+                  <FiEdit aria-hidden />
+                  Share announcement
+                </button>
+              </form>
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900">Recent announcements</h3>
+                <div className="mt-3 space-y-3 text-sm text-slate-700">
+                  {announcements.length === 0 && <p className="text-slate-500">No announcements published yet.</p>}
+                  {announcements.map((announcement) => (
+                    <article key={announcement.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <h4 className="font-semibold text-slate-900">{announcement.title}</h4>
+                      <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">Audience: {announcement.audience}</p>
+                      <p className="mt-2 text-sm text-slate-700">{announcement.message}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section id={sectionIds.contests} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Launch contest or challenge</h2>
+                  <p className="text-sm text-slate-600">Create science-language challenges and keep learners on schedule.</p>
+                </div>
+              </div>
+              <form onSubmit={handleContestSubmit} className="mt-4 grid gap-4">
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Contest name
+                  <input
+                    type="text"
+                    value={contestForm.name}
+                    onChange={(event) => setContestForm((previous) => ({ ...previous, name: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="English Lab Journal Showcase"
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Description
+                  <textarea
+                    value={contestForm.description}
+                    onChange={(event) => setContestForm((previous) => ({ ...previous, description: event.target.value }))}
+                    className="min-h-[140px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Students submit a one-page explanation of a recent experiment in English."
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Deadline (optional)
+                  <input
+                    type="date"
+                    value={contestForm.deadline}
+                    onChange={(event) => setContestForm((previous) => ({ ...previous, deadline: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  />
+                </label>
+                {isAdmin && (
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Audience
+                    <input
+                      type="text"
+                      value={contestForm.audience}
+                      onChange={(event) => setContestForm((previous) => ({ ...previous, audience: event.target.value }))}
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="global or organization name"
+                    />
+                  </label>
+                )}
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                  disabled={isSubmitting}
+                >
+                  <FiUsers aria-hidden />
+                  Create contest
+                </button>
+              </form>
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900">Active contests</h3>
+                <div className="mt-3 space-y-3 text-sm text-slate-700">
+                  {contests.length === 0 && <p className="text-slate-500">No contests created yet.</p>}
+                  {contests.map((contest) => (
+                    <article key={contest.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <h4 className="font-semibold text-slate-900">{contest.name}</h4>
+                      <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                        Audience: {contest.audience}
+                        {contest.deadline ? ` · Due ${contest.deadline}` : ''}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-700">{contest.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section id={sectionIds.practice} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Build English practice sets</h2>
+                  <p className="text-sm text-slate-600">Connect vocabulary, grammar, and science concepts with curated resources.</p>
+                </div>
+              </div>
+              <form onSubmit={handlePracticeSubmit} className="mt-4 grid gap-4">
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Title
+                  <input
+                    type="text"
+                    value={practiceForm.title}
+                    onChange={(event) => setPracticeForm((previous) => ({ ...previous, title: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Photosynthesis vocabulary focus"
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Focus area
+                  <input
+                    type="text"
+                    value={practiceForm.focusArea}
+                    onChange={(event) => setPracticeForm((previous) => ({ ...previous, focusArea: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Key vocabulary"
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Description
+                  <textarea
+                    value={practiceForm.description}
+                    onChange={(event) => setPracticeForm((previous) => ({ ...previous, description: event.target.value }))}
+                    className="min-h-[140px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Summarize the activity in clear English."
+                    required
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Resource URL (optional)
+                  <input
+                    type="url"
+                    value={practiceForm.resourceUrl}
+                    onChange={(event) => setPracticeForm((previous) => ({ ...previous, resourceUrl: event.target.value }))}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="https://"
+                  />
+                </label>
+                {isAdmin && (
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Audience
+                    <input
+                      type="text"
+                      value={practiceForm.audience}
+                      onChange={(event) => setPracticeForm((previous) => ({ ...previous, audience: event.target.value }))}
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="global or organization name"
+                    />
+                  </label>
+                )}
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                  disabled={isSubmitting}
+                >
+                  <FiUserCheck aria-hidden />
+                  Share practice set
+                </button>
+              </form>
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900">Practice sets</h3>
+                <div className="mt-3 space-y-3 text-sm text-slate-700">
+                  {practiceSets.length === 0 && <p className="text-slate-500">No practice sets created yet.</p>}
+                  {practiceSets.map((practice) => (
+                    <article key={practice.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <h4 className="font-semibold text-slate-900">{practice.title}</h4>
+                      <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                        Focus: {practice.focusArea} · Audience: {practice.audience}
+                      </p>
+                      {practice.description && <p className="mt-2 text-sm text-slate-700">{practice.description}</p>}
+                      {practice.resourceUrl && (
+                        <a
+                          href={practice.resourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand"
+                        >
+                          <FiExternalLink className="h-4 w-4" aria-hidden />
+                          Open linked resource
+                        </a>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section id={sectionIds.people} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Manage people</h2>
+                  <p className="text-sm text-slate-600">Adjust permissions, update organizations, and toggle account access.</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4">
+                {users.length === 0 && <p className="text-sm text-slate-600">No members found yet.</p>}
+                {users.map((entry) => {
+                  const currentRole = roleDrafts[entry.id] ?? entry.role;
+                  const currentOrganization = orgDrafts[entry.id] ?? entry.organization ?? '';
+                  const isTeacherDraft = currentRole === 'teacher';
+                  return (
+                    <article key={entry.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-base font-semibold text-slate-900">{entry.name}</div>
+                          <div className="text-sm text-slate-600">{entry.email}</div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${
+                              entry.status === 'active'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}
+                          >
+                            {entry.status}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 font-semibold text-slate-700">
+                            Role: {entry.role}
+                          </span>
+                          {entry.organization && (
+                            <span className="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 font-semibold text-slate-700">
+                              Org: {entry.organization}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-sm text-slate-700">
+                          Role
+                          <select
+                            value={currentRole}
+                            onChange={(event) => setRoleDraft(entry.id, event.target.value)}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          >
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </label>
+                        {isTeacherDraft && (
+                          <label className="grid gap-1 text-sm text-slate-700">
+                            Organization
+                            <input
+                              type="text"
+                              value={currentOrganization}
+                              onChange={(event) => setOrgDraft(entry.id, event.target.value)}
+                              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              placeholder="e.g., Green Valley High"
+                            />
+                          </label>
+                        )}
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                          onClick={() => handleRoleUpdate(entry)}
+                          disabled={isSubmitting}
+                        >
+                          <FiCheckCircle aria-hidden />
+                          Save role
+                        </button>
+                        <button
+                          type="button"
+                          className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                            entry.status === 'active'
+                              ? 'bg-red-600 text-white hover:bg-red-500'
+                              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                          }`}
+                          onClick={() => handleStatusToggle(entry)}
+                          disabled={isSubmitting}
+                        >
+                          <FiShield aria-hidden />
+                          {entry.status === 'active' ? 'Ban user' : 'Reinstate'}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          </main>
         </div>
-      </WPAdminCard>
-    </WPAdminLayout>
+      </div>
+    </div>
   );
 };
 
