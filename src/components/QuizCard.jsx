@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const QuizCard = ({ quiz }) => {
+  const { t } = useLanguage();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
 
   const question = quiz.questions[currentQuestion];
+  const title = t(['quizzes', quiz.id, 'title'], quiz.title);
+  const description = t(['quizzes', quiz.id, 'description'], quiz.description);
+  const prompt = t(['quizzes', quiz.id, 'questions', currentQuestion, 'prompt'], question.prompt);
+  const options = t(['quizzes', quiz.id, 'questions', currentQuestion, 'options'], question.options);
+  const explanation = t(
+    ['quizzes', quiz.id, 'questions', currentQuestion, 'explanation'],
+    question.explanation
+  );
 
   const handleOptionClick = (index) => {
     setSelectedOption(index);
@@ -23,14 +33,16 @@ const QuizCard = ({ quiz }) => {
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-semibold text-slate-900">{quiz.title}</h3>
-        <p className="text-sm text-slate-600">{quiz.description}</p>
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+        <p className="text-sm text-slate-600">{description}</p>
       </div>
       <div className="rounded-2xl bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-brand">Question {currentQuestion + 1}</p>
-        <p className="mt-2 text-base font-medium text-slate-900">{question.prompt}</p>
+        <p className="text-sm font-semibold text-brand">
+          {t('quizzesPage.questionLabel', `Question {index}`, { index: currentQuestion + 1 })}
+        </p>
+        <p className="mt-2 text-base font-medium text-slate-900">{prompt}</p>
         <ul className="mt-4 space-y-3">
-          {question.options.map((option, index) => {
+          {options.map((option, index) => {
             const isSelected = selectedOption === index;
             const isAnswer = question.answerIndex === index;
             const statusClass =
@@ -63,7 +75,7 @@ const QuizCard = ({ quiz }) => {
               isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
             }`}
           >
-            {question.explanation}
+            {explanation}
           </div>
         )}
       </div>
@@ -72,7 +84,7 @@ const QuizCard = ({ quiz }) => {
           onClick={handleNext}
           className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-dark"
         >
-          Next question
+          {t('quizzesPage.nextQuestion', 'Next question')}
         </button>
       </div>
     </section>

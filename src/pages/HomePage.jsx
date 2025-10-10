@@ -7,9 +7,11 @@ import WordOfDay from '../components/WordOfDay';
 import ScienceChatbot from '../components/ScienceChatbot';
 import { subjects } from '../data/lessons';
 import { quizzes } from '../data/quizzes';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const HomePage = () => {
   const featuredQuizzes = useMemo(() => quizzes.slice(0, 2), []);
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-16">
@@ -17,14 +19,17 @@ const HomePage = () => {
       <section className="mx-auto max-w-6xl px-4">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">Core and extension tracks</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">
+              {t('home.tracksEyebrow', 'Core and extension tracks')}
+            </p>
             <h2 className="mt-2 text-2xl font-display font-semibold text-slate-900">
-              Lead with English, then explore science extensions
+              {t('home.tracksHeading', 'Lead with English, then explore science extensions')}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              Begin with the English for Science track to practice vocabulary, grammar, and presentation phrases. When you feel
-              confident, continue to the extension modules for Physics, Chemistry, Biology, and Earth Science—each includes
-              visuals, videos, and key terms in learner-friendly English.
+              {t(
+                'home.tracksDescription',
+                'Begin with the English for Science track to practice vocabulary, grammar, and presentation phrases. When you feel confident, continue to the extension modules for Physics, Chemistry, Biology, and Earth Science—each includes visuals, videos, and key terms in learner-friendly English.'
+              )}
             </p>
           </div>
         </div>
@@ -36,7 +41,9 @@ const HomePage = () => {
       </section>
       <section className="mx-auto grid max-w-6xl gap-6 px-4 md:grid-cols-[2fr,1fr]">
         <div className="space-y-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">Interactive Practice</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">
+            {t('home.practiceEyebrow', 'Interactive Practice')}
+          </p>
           {featuredQuizzes.map((quiz) => (
             <QuizCard key={quiz.id} quiz={quiz} />
           ))}
@@ -48,16 +55,20 @@ const HomePage = () => {
       </section>
       <section className="mx-auto max-w-6xl px-4">
         <div className="rounded-3xl bg-brand-light/60 p-8 shadow-sm">
-          <h2 className="text-2xl font-display font-semibold text-brand-dark">Practice English with classmates</h2>
+          <h2 className="text-2xl font-display font-semibold text-brand-dark">
+            {t('home.forumHeading', 'Practice English with classmates')}
+          </h2>
           <p className="mt-3 max-w-3xl text-sm text-slate-600">
-            Join the SciBridge Forum to post study updates, ask questions in English, and support other students in Physics,
-            Chemistry, Biology, and Earth Science. Create an account, verify your email, and log in to share your voice safely.
+            {t(
+              'home.forumDescription',
+              'Join the SciBridge Forum to post study updates, ask questions in English, and support other students in Physics, Chemistry, Biology, and Earth Science. Create an account, verify your email, and log in to share your voice safely.'
+            )}
           </p>
           <Link
             to="/forum"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
           >
-            Visit the forum
+            {t('home.forumCta', 'Visit the forum')}
           </Link>
         </div>
       </section>

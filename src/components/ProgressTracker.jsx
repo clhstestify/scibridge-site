@@ -1,14 +1,22 @@
+import { useLanguage } from '../context/LanguageContext.jsx';
+
 const ProgressTracker = ({ progress, totalLessons, onReset }) => {
+  const { t } = useLanguage();
   const completedCount = Object.keys(progress).length;
   const percentage = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide">Learning Progress</p>
-        <h3 className="mt-2 text-2xl font-display font-semibold">{percentage}% complete</h3>
+        <p className="text-xs font-semibold uppercase tracking-wide">{t('progress.title', 'Learning Progress')}</p>
+        <h3 className="mt-2 text-2xl font-display font-semibold">
+          {t('progress.percentage', `${percentage}% complete`, { percentage })}
+        </h3>
         <p className="mt-1 text-sm text-emerald-700/80">
-          You have finished {completedCount} of {totalLessons} lessons. Keep going!
+          {t('progress.summary', `You have finished ${completedCount} of ${totalLessons} lessons. Keep going!`, {
+            completed: completedCount,
+            total: totalLessons
+          })}
         </p>
       </div>
       <div className="h-3 w-full rounded-full bg-emerald-100">
@@ -21,7 +29,7 @@ const ProgressTracker = ({ progress, totalLessons, onReset }) => {
         onClick={onReset}
         className="self-start rounded-full bg-white px-4 py-2 text-xs font-semibold text-emerald-600 shadow-sm hover:bg-emerald-100"
       >
-        Reset progress
+        {t('progress.reset', 'Reset progress')}
       </button>
     </section>
   );

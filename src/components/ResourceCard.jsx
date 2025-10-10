@@ -1,15 +1,19 @@
+import { useLanguage } from '../context/LanguageContext.jsx';
+
 const ResourceCard = ({ resource }) => {
+  const { t } = useLanguage();
+  const description = t(['resources', resource.id, 'description'], resource.description);
   return (
     <article className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-semibold text-slate-900">{resource.title}</h3>
-      <p className="text-sm text-slate-600">{resource.description}</p>
+      <p className="text-sm text-slate-600">{description}</p>
       <a
         href={resource.url}
         target="_blank"
         rel="noreferrer"
         className="text-sm font-semibold text-brand hover:text-brand-dark"
       >
-        Visit resource
+        {t('resourcesPage.visit', 'Visit resource')}
       </a>
     </article>
   );

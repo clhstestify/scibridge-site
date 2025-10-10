@@ -1,20 +1,25 @@
 import { Link } from 'react-router-dom';
 import { FiBookOpen, FiCheckCircle } from 'react-icons/fi';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const LessonCard = ({ lesson, subjectId, isCompleted, onComplete }) => {
+  const { t } = useLanguage();
+  const title = t(['lessons', subjectId, lesson.id, 'title'], lesson.title);
+  const summary = t(['lessons', subjectId, lesson.id, 'summary'], lesson.summary);
+  const keyVocabulary = t(['lessons', subjectId, lesson.id, 'keyVocabulary'], lesson.keyVocabulary);
   return (
     <article className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">{lesson.title}</h3>
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <FiBookOpen aria-hidden />
-          <span>{lesson.keyVocabulary.length} key words</span>
+          <span>{t('lessonCard.keyWords', `${keyVocabulary.length} key words`, { count: keyVocabulary.length })}</span>
         </div>
       </div>
-      <p className="text-sm text-slate-600">{lesson.summary}</p>
-      <img src={lesson.image} alt={lesson.title} className="h-40 w-full object-cover" />
+      <p className="text-sm text-slate-600">{summary}</p>
+      <img src={lesson.image} alt={title} className="h-40 w-full object-cover" />
       <div className="flex flex-wrap gap-2 text-xs text-brand">
-        {lesson.keyVocabulary.map((word) => (
+        {keyVocabulary.map((word) => (
           <span key={word} className="rounded-full bg-brand-light/60 px-3 py-1 text-brand-dark">
             {word}
           </span>
@@ -25,7 +30,7 @@ const LessonCard = ({ lesson, subjectId, isCompleted, onComplete }) => {
           to={`/subjects/${subjectId}/lessons/${lesson.id}`}
           className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-dark"
         >
-          View lesson
+          {t('lessonCard.viewLesson', 'View lesson')}
         </Link>
         <button
           onClick={() => onComplete?.(lesson.id)}
@@ -34,7 +39,7 @@ const LessonCard = ({ lesson, subjectId, isCompleted, onComplete }) => {
           }`}
         >
           <FiCheckCircle aria-hidden />
-          {isCompleted ? 'Completed' : 'Mark as completed'}
+          {isCompleted ? t('lessonCard.completed', 'Completed') : t('lessonCard.markCompleted', 'Mark as completed')}
         </button>
       </div>
     </article>

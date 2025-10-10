@@ -1,29 +1,36 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const Hero = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-light via-white to-accent-light px-6 py-16 shadow-lg">
       <div className="relative z-10 mx-auto max-w-3xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-dark">English-first learning</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-dark">
+          {t('hero.eyebrow', 'English-first learning')}
+        </p>
         <h1 className="mt-4 font-display text-4xl font-semibold text-slate-900 md:text-5xl">
-          Master English to unlock every science story
+          {t('hero.heading', 'Master English to unlock every science story')}
         </h1>
         <p className="mt-4 text-base text-slate-600 md:text-lg">
-          Start with Academic English for Science, then extend your skills to Physics, Chemistry, Biology, and Earth Science.
-          Learn with visuals, short videos, interactive quizzes, and vocabulary adapted from Oxford and Cambridge resources.
+          {t(
+            'hero.description',
+            'Start with Academic English for Science, then extend your skills to Physics, Chemistry, Biology, and Earth Science. Learn with visuals, short videos, interactive quizzes, and vocabulary adapted from Oxford and Cambridge resources.'
+          )}
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
             to="/subjects"
             className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/30 transition hover:bg-brand-dark"
           >
-            Explore subjects
+            {t('hero.primaryCta', 'Explore subjects')}
           </Link>
           <Link
             to="/quizzes"
             className="rounded-full border border-brand bg-white px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand-light/60"
           >
-            Try a quiz
+            {t('hero.secondaryCta', 'Try a quiz')}
           </Link>
         </div>
       </div>
