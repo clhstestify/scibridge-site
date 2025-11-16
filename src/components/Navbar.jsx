@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FiMenu, FiX, FiSearch, FiGlobe, FiMoon, FiSun } from 'react-icons/fi';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import WPAdminToolbar from './WPAdminToolbar.jsx';
 
 const baseNavItems = [
   { path: '/', labelKey: 'navbar.home', defaultLabel: 'Home' },
@@ -76,29 +77,6 @@ const Navbar = ({ onSearch, user, onLogout }) => {
       ? 'border border-slate-800 bg-slate-900/80 text-slate-200 hover:border-brand/70 hover:text-white'
       : 'border border-slate-200 bg-white text-slate-700 hover:border-brand/60 hover:text-slate-900';
 
-  const displayName = user?.name || user?.email || 'Member';
-  const initials = useMemo(() => {
-    if (!displayName) return '?';
-    const letters = displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part[0])
-      .slice(0, 2)
-      .join('');
-    return letters ? letters.toUpperCase() : '?';
-  }, [displayName]);
-
-  const roleLabel = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member';
-  const subtextColor = theme === 'dark' ? 'text-slate-400' : 'text-slate-500';
-  const userCardClasses =
-    theme === 'dark'
-      ? 'border-slate-800 bg-slate-900/60 text-white'
-      : 'border-slate-200 bg-white text-slate-900 shadow-sm';
-  const logoutButtonClasses =
-    theme === 'dark'
-      ? 'bg-slate-800 text-white hover:bg-slate-700'
-      : 'bg-slate-900 text-white hover:bg-slate-800';
-
   return (
     <header className={`sticky top-0 z-50 border-b backdrop-blur ${headerClasses}`}>
       <div className="mx-auto max-w-7xl px-4">
@@ -164,25 +142,13 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               {theme === 'dark' ? t('navbar.lightMode', 'Light') : t('navbar.darkMode', 'Dark')}
             </button>
             {user ? (
-              <div className={`flex items-center gap-3 rounded-2xl border px-3 py-2 ${userCardClasses}`}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-base font-semibold text-brand">
-                  {initials}
-                </span>
-                <div className="mr-1 text-left">
-                  <div className="text-sm font-semibold leading-tight">{displayName}</div>
-                  <div className={`text-xs uppercase tracking-wide ${subtextColor}`}>{roleLabel}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onLogout?.();
-                    setIsOpen(false);
-                  }}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${logoutButtonClasses}`}
-                >
-                  Log out
-                </button>
-              </div>
+              <WPAdminToolbar
+                user={user}
+                onLogout={() => {
+                  onLogout?.();
+                  setIsOpen(false);
+                }}
+              />
             ) : (
               <NavLink
                 to="/forum"
@@ -272,41 +238,14 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               </span>
             </button>
             {user ? (
-              <div
-                className={`rounded-2xl border px-4 py-3 ${
-                  theme === 'dark'
-                    ? 'border-slate-800 bg-slate-900/70 text-white'
-                    : 'border-slate-200 bg-white text-slate-900 shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand/15 text-base font-semibold text-brand">
-                    {initials}
-                  </span>
-                  <div>
-                    <div className="text-sm font-semibold leading-tight">{displayName}</div>
-                    <div className={`text-xs uppercase tracking-wide ${subtextColor}`}>{roleLabel}</div>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <NavLink
-                    to="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className="inline-flex items-center justify-center rounded-full bg-brand px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm"
-                  >
-                    Admin panel
-                  </NavLink>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onLogout?.();
-                      setIsOpen(false);
-                    }}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${logoutButtonClasses}`}
-                  >
-                    Log out
-                  </button>
-                </div>
+              <div className="rounded-2xl border border-slate-200/60 bg-slate-100/30 p-3">
+                <WPAdminToolbar
+                  user={user}
+                  onLogout={() => {
+                    onLogout?.();
+                    setIsOpen(false);
+                  }}
+                />
               </div>
             ) : (
               <NavLink
