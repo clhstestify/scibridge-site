@@ -1,0 +1,115 @@
+/*
+  Styles inspired by Django WP Admin (https://github.com/DMOJ/dmoj-wpadmin).
+  The palette, gradients, and rounded badges match the WordPress admin bar so
+  that the signed-in toolbar feels familiar to staff and students.
+*/
+
+.wpadmin-toolbar {
+  font-family: 'Inter', 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #23282d 0%, #191e23 70%);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.45);
+  min-height: 3rem;
+}
+
+.wpadmin-toolbar__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wpadmin-toolbar__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1e40af, #38bdf8);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.wpadmin-toolbar__labels {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.wpadmin-toolbar__greeting {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wpadmin-toolbar__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.wpadmin-toolbar__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.wpadmin-toolbar__logout:hover {
+  background: #0ea5e9;
+  color: white;
+}
+
+.wpadmin-toolbar__logout:active {
+  transform: translateY(1px);
+}
+
+body.theme-light .wpadmin-toolbar {
+  background: linear-gradient(120deg, #1e293b, #0f172a);
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+body.theme-light .wpadmin-toolbar__logout {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+body.theme-light .wpadmin-toolbar__logout:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .wpadmin-toolbar {
+    width: 100%;
+    border-radius: 1.5rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .wpadmin-toolbar__user {
+    width: 100%;
+  }
+
+  .wpadmin-toolbar__logout {
+    width: 100%;
+    justify-content: center;
+  }
+}
