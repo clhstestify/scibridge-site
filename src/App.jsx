@@ -86,7 +86,7 @@ const App = () => {
           />
           <Route
             path="/admin"
-            element={<AdminPanelPage user={user} onProfileUpdate={handleProfileUpdate} />}
+            element={<AdminPanelPage user={user} onProfileUpdate={handleProfileUpdate} onLogout={handleLogout} />}
           />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/about" element={<AboutPage />} />
