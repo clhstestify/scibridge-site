@@ -18,6 +18,7 @@ import {
   updateUserRole,
   updateUserStatus
 } from '../services/adminService';
+import WPAdminToolbar from '../components/WPAdminToolbar.jsx';
 
 const WORDPRESS_ADMIN_URL = (import.meta.env.VITE_WORDPRESS_ADMIN_URL || '').trim();
 
@@ -131,7 +132,7 @@ const WordPressAdminEmbed = ({ url }) => {
   );
 };
 
-const AdminPanelPage = ({ user, onProfileUpdate }) => {
+const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
   const [dashboard, setDashboard] = useState(null);
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -427,6 +428,7 @@ const AdminPanelPage = ({ user, onProfileUpdate }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <WPAdminToolbar user={user} onLogout={onLogout} />
       <div className="mx-auto max-w-6xl px-4 py-10 lg:px-8">
         <header className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
