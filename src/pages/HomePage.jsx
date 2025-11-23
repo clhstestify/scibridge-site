@@ -4,10 +4,14 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 const studentFeatures = [
   {
     icon: '📚',
-    title: { vi: 'Bài học Video', en: 'Video Lessons' },
+    title: { vi: 'Bài học', en: 'Lessons' },
     description: {
-      vi: 'Bài giảng STEM bằng tiếng Anh có phụ đề',
-      en: 'STEM lessons in English with subtitles'
+      vi: 'Học Toán, Lý, Hóa, Sinh, Tin học bằng tiếng Anh',
+      en: 'Learn Maths, Physics, Chemistry, Biology, and ICT in English'
+    },
+    subtopics: {
+      vi: ['Toán', 'Vật lý', 'Hóa học', 'Sinh học', 'Tin học'],
+      en: ['Maths', 'Physics', 'Chemistry', 'Biology', 'ICT']
     }
   },
   {
@@ -319,6 +323,18 @@ const HomePage = () => {
                 <p className="mt-2 text-sm text-slate-600">
                   {feature.description[language] ?? feature.description.en}
                 </p>
+                {feature.subtopics && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(feature.subtopics[language] ?? feature.subtopics.en).map((topic) => (
+                      <span
+                        key={`${feature.title.en}-${topic}`}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </article>
             ))}
           </div>
