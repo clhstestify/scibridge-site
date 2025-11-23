@@ -8,7 +8,6 @@ const baseNavItems = [
   { path: '/', labelKey: 'navbar.home', defaultLabel: 'Home' },
   { path: '/subjects', labelKey: 'navbar.subjects', defaultLabel: 'Subjects' },
   { path: '/quizzes', labelKey: 'navbar.quizzes', defaultLabel: 'Interactive Quizzes' },
-  { path: '/forum', labelKey: 'navbar.forum', defaultLabel: 'Forum' },
   { path: '/login', labelKey: 'navbar.login', defaultLabel: 'Log in' },
   { path: '/register', labelKey: 'navbar.register', defaultLabel: 'Register' },
   { path: '/resources', labelKey: 'navbar.resources', defaultLabel: 'Resources' },
@@ -118,10 +117,10 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               />
             ) : (
               <NavLink
-                to="/register"
+                to="/login"
                 className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
               >
-                {t('navbar.joinForum', 'Join Forum')}
+                {t('navbar.login', 'Log in')}
               </NavLink>
             )}
           </div>
@@ -184,11 +183,11 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               </div>
             ) : (
               <NavLink
-                to="/register"
+                to="/login"
                 onClick={() => setIsOpen(false)}
                 className="rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
               >
-                {t('navbar.joinForumMobile', 'Join the Forum')}
+                {t('navbar.login', 'Log in')}
               </NavLink>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const studentFeatures = [
@@ -240,6 +241,10 @@ const localizedCopy = {
       'Học từ vựng chuyên ngành, bài giảng video, bài tập, quiz và flashcards',
     communicationTitle: '🗣️ Giao tiếp Tiếng Anh Học đường',
     communicationSubtitle: 'Học giao tiếp theo tình huống thực tế trong lớp học',
+    forumTitle: 'Tham gia Diễn đàn SciBridge',
+    forumDescription:
+      'Chia sẻ mẹo học tập, đặt câu hỏi STEM và luyện tiếng Anh cùng cộng đồng thân thiện.',
+    forumCta: 'Đăng nhập để tham gia thảo luận',
     ctaTitle: 'Bắt đầu học ngay hôm nay!',
     ctaSubtitle: 'Tham gia cùng hàng ngàn học sinh và giáo viên đang học STEM bằng tiếng Anh',
     primaryCta: '📝 Đăng ký miễn phí',
@@ -254,6 +259,10 @@ const localizedCopy = {
     subjectsSubtitle: 'Learn technical vocabulary, video lessons, exercises, quizzes and flashcards',
     communicationTitle: '🗣️ School English Communication',
     communicationSubtitle: 'Learn communication through real classroom situations',
+    forumTitle: 'Join the SciBridge Forum',
+    forumDescription:
+      'Share your study tips, ask for STEM help, and practice English with other learners in a supportive space.',
+    forumCta: 'Log in to join the conversation',
     ctaTitle: 'Start Learning Today!',
     ctaSubtitle: 'Join thousands of students and teachers learning STEM in English',
     primaryCta: '📝 Sign Up Free',
@@ -389,6 +398,47 @@ const HomePage = () => {
               </p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl rounded-3xl border border-slate-100 bg-white/90 px-4 py-12 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+        <div className="grid items-center gap-8 md:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Forum</p>
+            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{copy.forumTitle}</h2>
+            <p className="text-lg text-slate-600">{copy.forumDescription}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-600"
+              >
+                {copy.forumCta}
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:border-emerald-400"
+              >
+                📝 {copy.primaryCta}
+              </Link>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-6 shadow-inner">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.18),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(14,165,233,0.15),transparent_35%)]" aria-hidden />
+            <div className="relative space-y-4">
+              <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-800">💡 Chủ đề nổi bật</p>
+                <ul className="mt-2 space-y-2 text-sm text-slate-600">
+                  <li>• Cách trình bày thí nghiệm bằng tiếng Anh</li>
+                  <li>• Hỏi đáp bài tập Toán, Lý, Hóa, Sinh</li>
+                  <li>• Mẹo luyện speaking với bạn học</li>
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-800">🤝 Không gian an toàn</p>
+                <p className="mt-2 text-sm text-slate-600">Đăng nhập để bình luận, trao đổi và xây dựng cộng đồng học tập tích cực.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
