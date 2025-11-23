@@ -54,7 +54,7 @@ const App = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col text-slate-100">
+    <div className="flex min-h-screen flex-col text-slate-900">
       <Navbar onSearch={setSearchQuery} user={user} onLogout={handleLogout} />
       <main className="flex-1 pb-20">
         <Routes>
@@ -83,6 +83,16 @@ const App = () => {
           <Route
             path="/forum"
             element={<ForumPage user={user} onAuthSuccess={handleAuthSuccess} onLogout={handleLogout} />}
+          />
+          <Route
+            path="/login"
+            element={<ForumPage user={user} onAuthSuccess={handleAuthSuccess} onLogout={handleLogout} initialAuthView="login" />}
+          />
+          <Route
+            path="/register"
+            element={
+              <ForumPage user={user} onAuthSuccess={handleAuthSuccess} onLogout={handleLogout} initialAuthView="register" />
+            }
           />
           <Route
             path="/admin"

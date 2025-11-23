@@ -1,6 +1,8 @@
 export const translations = {
   en: {
     navbar: {
+      login: 'Log in',
+      register: 'Register',
       languageToggle: 'Switch language',
       languageName: {
         en: 'English',
@@ -18,6 +20,8 @@ export const translations = {
       subjects: 'Môn học',
       quizzes: 'Bài kiểm tra tương tác',
       forum: 'Diễn đàn',
+      login: 'Đăng nhập',
+      register: 'Đăng ký',
       resources: 'Tài nguyên',
       about: 'Giới thiệu',
       contact: 'Liên hệ',

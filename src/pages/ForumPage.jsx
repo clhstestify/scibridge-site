@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiAlertCircle,
@@ -91,7 +91,7 @@ const formatDate = (isoDate, locale = 'en') =>
     timeStyle: 'short'
   }).format(new Date(isoDate));
 
-const ForumPage = ({ user, onAuthSuccess, onLogout }) => {
+const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register' }) => {
   const { t, language } = useLanguage();
   const locale = language === 'vi' ? 'vi' : 'en';
 
@@ -101,12 +101,18 @@ const ForumPage = ({ user, onAuthSuccess, onLogout }) => {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [forumMessage, setForumMessage] = useState(null);
 
-  const [authView, setAuthView] = useState('register');
+  const [authView, setAuthView] = useState(initialAuthView);
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
   const [verifyForm, setVerifyForm] = useState({ email: '', code: '' });
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [authMessage, setAuthMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setAuthView(initialAuthView);
+    setAuthMessage(null);
+    setForumMessage(null);
+  }, [initialAuthView]);
 
   const activeSubjects = useMemo(
     () => ['English for Science', 'Physics', 'Chemistry', 'Biology', 'Earth Science'],

@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiGlobe, FiMoon, FiSun } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiGlobe } from 'react-icons/fi';
 import { useLanguage } from '../context/LanguageContext.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
 import WPAdminToolbar from './WPAdminToolbar.jsx';
 
 const baseNavItems = [
@@ -10,6 +9,8 @@ const baseNavItems = [
   { path: '/subjects', labelKey: 'navbar.subjects', defaultLabel: 'Subjects' },
   { path: '/quizzes', labelKey: 'navbar.quizzes', defaultLabel: 'Interactive Quizzes' },
   { path: '/forum', labelKey: 'navbar.forum', defaultLabel: 'Forum' },
+  { path: '/login', labelKey: 'navbar.login', defaultLabel: 'Log in' },
+  { path: '/register', labelKey: 'navbar.register', defaultLabel: 'Register' },
   { path: '/resources', labelKey: 'navbar.resources', defaultLabel: 'Resources' },
   { path: '/about', labelKey: 'navbar.about', defaultLabel: 'About' },
   { path: '/contact', labelKey: 'navbar.contact', defaultLabel: 'Contact' }
@@ -20,7 +21,6 @@ const Navbar = ({ onSearch, user, onLogout }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { t, language, toggleLanguage } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
 
   const navItems = useMemo(() => {
     const items = [...baseNavItems];
@@ -39,43 +39,26 @@ const Navbar = ({ onSearch, user, onLogout }) => {
     setIsOpen(false);
   };
 
-  const headerClasses =
-    theme === 'dark'
-      ? 'border-slate-800/80 bg-slate-950/80 text-white'
-      : 'border-slate-200 bg-white/85 text-slate-900 shadow-sm';
+  const headerClasses = 'border-slate-200 bg-white/85 text-slate-900 shadow-sm';
 
-  const inputClasses =
-    theme === 'dark'
-      ? 'border-slate-800 bg-slate-900/70 text-slate-200 focus:border-brand'
-      : 'border-slate-200 bg-white text-slate-900 shadow-sm focus:border-brand/60';
+  const inputClasses = 'border-slate-200 bg-white text-slate-900 shadow-sm focus:border-brand/60';
 
   const desktopNavClass = ({ isActive }) => {
     const activeClasses =
-      theme === 'dark'
-        ? "text-white after:absolute after:left-3 after:right-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-brand after:content-['']"
-        : "text-brand-dark after:absolute after:left-3 after:right-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-brand after:content-['']";
+      "text-brand-dark after:absolute after:left-3 after:right-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-brand after:content-['']";
     const inactiveClasses =
-      theme === 'dark'
-        ? "text-slate-300 hover:text-white hover:after:absolute hover:after:left-3 hover:after:right-3 hover:after:-bottom-1 hover:after:h-0.5 hover:after:rounded-full hover:after:bg-slate-700 hover:after:content-['']"
-        : "text-slate-600 hover:text-slate-900 hover:after:absolute hover:after:left-3 hover:after:right-3 hover:after:-bottom-1 hover:after:h-0.5 hover:after:rounded-full hover:after:bg-slate-200 hover:after:content-['']";
+      "text-slate-600 hover:text-slate-900 hover:after:absolute hover:after:left-3 hover:after:right-3 hover:after:-bottom-1 hover:after:h-0.5 hover:after:rounded-full hover:after:bg-slate-200 hover:after:content-['']";
     return `relative rounded-full px-3 py-2 text-sm font-semibold transition ${isActive ? activeClasses : inactiveClasses}`;
   };
 
   const mobileNavClass = ({ isActive }) => {
     if (isActive) {
-      return theme === 'dark'
-        ? 'rounded-xl border border-brand/50 bg-brand/15 text-white'
-        : 'rounded-xl border border-brand/40 bg-brand/5 text-brand-dark';
+      return 'rounded-xl border border-brand/40 bg-brand/5 text-brand-dark';
     }
-    return theme === 'dark'
-      ? 'rounded-xl border border-slate-800 bg-slate-900/70 text-slate-200 hover:border-brand/40 hover:text-white'
-      : 'rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-brand/40 hover:text-slate-900';
+    return 'rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-brand/40 hover:text-slate-900';
   };
 
-  const pillButtonBase =
-    theme === 'dark'
-      ? 'border border-slate-800 bg-slate-900/80 text-slate-200 hover:border-brand/70 hover:text-white'
-      : 'border border-slate-200 bg-white text-slate-700 hover:border-brand/60 hover:text-slate-900';
+  const pillButtonBase = 'border border-slate-200 bg-white text-slate-700 hover:border-brand/60 hover:text-slate-900';
 
   return (
     <header className={`sticky top-0 z-50 border-b backdrop-blur ${headerClasses}`}>
@@ -83,11 +66,7 @@ const Navbar = ({ onSearch, user, onLogout }) => {
         <nav className="flex h-20 items-center gap-4">
           <Link
             to="/"
-            className={`flex items-center gap-3 rounded-2xl border px-4 py-2 text-lg font-display font-semibold shadow-[0_0_20px_rgba(15,23,42,0.15)] transition hover:border-brand/70 ${
-              theme === 'dark'
-                ? 'border-slate-800/60 bg-slate-900/80 text-white'
-                : 'border-slate-200 bg-white text-slate-900'
-            }`}
+            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-lg font-display font-semibold text-slate-900 shadow-[0_0_20px_rgba(15,23,42,0.15)] transition hover:border-brand/70"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/20 text-sm font-bold uppercase tracking-wide text-brand">
               SB
@@ -129,18 +108,6 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               <FiGlobe aria-hidden />
               {language === 'en' ? 'EN' : 'VI'}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                toggleTheme();
-                setIsOpen(false);
-              }}
-              className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${pillButtonBase}`}
-              aria-label={t('navbar.themeToggle', 'Switch color theme')}
-            >
-              {theme === 'dark' ? <FiSun aria-hidden /> : <FiMoon aria-hidden />}
-              {theme === 'dark' ? t('navbar.lightMode', 'Light') : t('navbar.darkMode', 'Dark')}
-            </button>
             {user ? (
               <WPAdminToolbar
                 user={user}
@@ -151,7 +118,7 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               />
             ) : (
               <NavLink
-                to="/forum"
+                to="/register"
                 className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
               >
                 {t('navbar.joinForum', 'Join Forum')}
@@ -159,7 +126,7 @@ const Navbar = ({ onSearch, user, onLogout }) => {
             )}
           </div>
           <button
-            className="ml-auto inline-flex items-center justify-center rounded-full border border-slate-800 bg-slate-900/80 p-2 text-slate-200 transition hover:border-brand/70 hover:text-white md:hidden"
+            className="ml-auto inline-flex items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-700 transition hover:border-brand/70 hover:text-slate-900 md:hidden"
             onClick={() => setIsOpen((prev) => !prev)}
             aria-label="Toggle navigation"
           >
@@ -168,22 +135,14 @@ const Navbar = ({ onSearch, user, onLogout }) => {
         </nav>
       </div>
       {isOpen && (
-        <div
-          className={`border-t px-4 py-5 md:hidden ${
-            theme === 'dark' ? 'border-slate-800/60 bg-slate-950/95' : 'border-slate-200 bg-white'
-          }`}
-        >
+        <div className="border-t border-slate-200 bg-white px-4 py-5 md:hidden">
           <form onSubmit={handleSubmit} className="relative mb-5">
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden />
             <input
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className={`w-full rounded-full border py-2 pl-11 pr-4 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40 ${
-                theme === 'dark'
-                  ? 'border-slate-800 bg-slate-900/80 text-slate-200'
-                  : 'border-slate-200 bg-white text-slate-900 shadow-sm'
-              }`}
+              className="w-full rounded-full border border-slate-200 bg-white py-2 pl-11 pr-4 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
               placeholder={t('navbar.searchPlaceholder', 'Search lessons')}
               aria-label={t('navbar.searchAria', 'Search lessons')}
             />
@@ -205,37 +164,13 @@ const Navbar = ({ onSearch, user, onLogout }) => {
                 toggleLanguage();
                 setIsOpen(false);
               }}
-              className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
-                theme === 'dark'
-                  ? 'border-slate-800 bg-slate-900/80 text-slate-200 hover:border-brand/60 hover:text-white'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-brand/60 hover:text-slate-900'
-              }`}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:border-brand/60 hover:text-slate-900"
             >
               <span className="inline-flex items-center gap-2">
                 <FiGlobe aria-hidden />
                 {t('navbar.languageToggle', 'Switch language')}
               </span>
               <span className="mt-1 block text-xs uppercase tracking-wide text-slate-500">{language === 'en' ? 'English' : 'Tiếng Việt'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                toggleTheme();
-                setIsOpen(false);
-              }}
-              className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
-                theme === 'dark'
-                  ? 'border-slate-800 bg-slate-900/80 text-slate-200 hover:border-brand/60 hover:text-white'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-brand/60 hover:text-slate-900'
-              }`}
-            >
-              <span className="inline-flex items-center gap-2">
-                {theme === 'dark' ? <FiSun aria-hidden /> : <FiMoon aria-hidden />}
-                {t('navbar.themeToggle', 'Switch color theme')}
-              </span>
-              <span className="mt-1 block text-xs uppercase tracking-wide text-slate-500">
-                {theme === 'dark' ? t('navbar.lightMode', 'Light') : t('navbar.darkMode', 'Dark')}
-              </span>
             </button>
             {user ? (
               <div className="rounded-2xl border border-slate-200/60 bg-slate-100/30 p-3">
@@ -249,7 +184,7 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               </div>
             ) : (
               <NavLink
-                to="/forum"
+                to="/register"
                 onClick={() => setIsOpen(false)}
                 className="rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
               >
