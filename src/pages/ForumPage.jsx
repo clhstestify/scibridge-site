@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  FiAlertCircle,
-  FiCheckCircle,
-  FiLock,
-  FiLogIn,
-  FiMail,
-  FiMessageCircle,
-  FiSend,
-  FiUser
-} from 'react-icons/fi';
-import { registerUser, verifyEmail, loginUser } from '../services/authService';
+import { FiAlertCircle, FiCheckCircle, FiLock, FiLogIn, FiMessageCircle, FiSend, FiUser } from 'react-icons/fi';
+import { registerUser, loginUser } from '../services/authService';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const initialPosts = [
@@ -101,15 +92,14 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
   const [commentDrafts, setCommentDrafts] = useState({});
   const [forumMessage, setForumMessage] = useState(null);
 
-  const [authView, setAuthView] = useState(initialAuthView);
-  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
-  const [verifyForm, setVerifyForm] = useState({ email: '', code: '' });
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [authView, setAuthView] = useState(initialAuthView === 'login' ? 'login' : 'register');
+  const [registerForm, setRegisterForm] = useState({ name: '', username: '', password: '' });
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [authMessage, setAuthMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setAuthView(initialAuthView);
+    setAuthView(initialAuthView === 'login' ? 'login' : 'register');
     setAuthMessage(null);
     setForumMessage(null);
   }, [initialAuthView]);
@@ -119,14 +109,10 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     []
   );
 
-  const authTabs = useMemo(
-    () => [
-      { key: 'register', label: t('forumPage.register', 'Register') },
-      { key: 'verify', label: t('forumPage.verify', 'Verify email') },
-      { key: 'login', label: t('forumPage.login', 'Log in') }
-    ],
-    [t]
-  );
+  const authTabs = useMemo(() => [
+    { key: 'register', label: t('forumPage.register', 'Register') },
+    { key: 'login', label: t('forumPage.login', 'Log in') }
+  ], [t]);
 
   const translateSubject = useCallback(
     (value) => t(['forumPage', 'subjects', value], value),
@@ -151,7 +137,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     const newPost = {
       id: `post-${Date.now()}`,
       translationId: null,
-      author: `${user.name} (${user.email})`,
+      author: `${user.name} (@${user.username})`,
       subject,
       createdAt: new Date().toISOString(),
       content: statusText.trim(),
@@ -184,7 +170,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     const newComment = {
       id: `comment-${Date.now()}`,
       translationId: null,
-      author: `${user.name} (${user.email})`,
+      author: `${user.name} (@${user.username})`,
       createdAt: new Date().toISOString(),
       content: draft
     };
@@ -213,27 +199,8 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     try {
       const { message } = await registerUser(registerForm);
       setAuthMessage({ type: 'success', text: message });
-      setVerifyForm({ email: registerForm.email, code: '' });
-      setLoginForm((previous) => ({ ...previous, email: registerForm.email }));
-      setRegisterForm({ name: '', email: '', password: '' });
-      setAuthView('verify');
-    } catch (error) {
-      setAuthMessage({ type: 'error', text: error.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleVerify = async (event) => {
-    event.preventDefault();
-    resetMessages();
-    setIsSubmitting(true);
-    try {
-      const { message } = await verifyEmail({
-        email: verifyForm.email,
-        code: verifyForm.code
-      });
-      setAuthMessage({ type: 'success', text: message });
+      setLoginForm((previous) => ({ ...previous, username: registerForm.username }));
+      setRegisterForm({ name: '', username: '', password: '' });
       setAuthView('login');
     } catch (error) {
       setAuthMessage({ type: 'error', text: error.message });
@@ -298,7 +265,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
           <p className="mt-4 max-w-3xl text-base text-slate-600">
             {t(
               'forumPage.description',
-              'Share science ideas in English, ask classmates questions, and practice academic vocabulary together. Create an account, verify your email address, and log in to join the conversation.'
+              'Share science ideas in English, ask classmates questions, and practice academic vocabulary together. Create a username and log in to join the conversation.'
             )}
           </p>
           {!user ? (
@@ -343,15 +310,15 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                     />
                   </label>
                   <label className="flex flex-col text-sm font-semibold text-slate-600">
-                    {t('forumPage.email', 'Email')}
+                    {t('forumPage.username', 'Username')}
                     <input
-                      type="email"
-                      value={registerForm.email}
+                      type="text"
+                      value={registerForm.username}
                       onChange={(event) =>
-                        setRegisterForm((previous) => ({ ...previous, email: event.target.value }))
+                        setRegisterForm((previous) => ({ ...previous, username: event.target.value }))
                       }
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder="you@example.com"
+                      placeholder={t('forumPage.usernamePlaceholder', 'Choose a unique username')}
                       required
                     />
                   </label>
@@ -369,67 +336,15 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                       minLength={8}
                     />
                   </label>
-                  <p className="sm:col-span-2 text-xs text-slate-500">
-                    {t(
-                      'forumPage.verificationNotice',
-                      'We send a verification code to your email using secure SMTP delivery. Enter the code to activate your account before you post.'
-                    )}
-                  </p>
                   <button
                     type="submit"
                     className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isSubmitting}
                   >
-                    <FiMail aria-hidden />
+                    <FiUser aria-hidden />
                     {isSubmitting
-                      ? t('forumPage.sendingCode', 'Sending verification email…')
-                      : t('forumPage.registerCta', 'Register and send code')}
-                  </button>
-                </form>
-              )}
-              {authView === 'verify' && (
-                <form onSubmit={handleVerify} className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2 flex items-center gap-2 text-sm font-semibold text-brand-dark">
-                    <FiMail aria-hidden />
-                    {t('forumPage.verificationTitle', 'Verify your email address')}
-                  </div>
-                  <label className="flex flex-col text-sm font-semibold text-slate-600">
-                    {t('forumPage.email', 'Email')}
-                    <input
-                      type="email"
-                      value={verifyForm.email}
-                      onChange={(event) =>
-                        setVerifyForm((previous) => ({ ...previous, email: event.target.value }))
-                      }
-                      className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </label>
-                  <label className="flex flex-col text-sm font-semibold text-slate-600">
-                    {t('forumPage.verificationCode', 'Verification code')}
-                    <input
-                      type="text"
-                      value={verifyForm.code}
-                      onChange={(event) =>
-                        setVerifyForm((previous) => ({ ...previous, code: event.target.value.toUpperCase() }))
-                      }
-                      className="mt-2 uppercase tracking-widest rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder={t('forumPage.codePlaceholder', 'Enter 6 letters')}
-                      required
-                      minLength={6}
-                      maxLength={6}
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isSubmitting}
-                  >
-                    <FiCheckCircle aria-hidden />
-                    {isSubmitting
-                      ? t('forumPage.checkingCode', 'Checking code…')
-                      : t('forumPage.confirmEmail', 'Confirm email')}
+                      ? t('forumPage.creatingAccount', 'Creating your account…')
+                      : t('forumPage.registerCta', 'Register and start chatting')}
                   </button>
                 </form>
               )}
@@ -440,15 +355,15 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                     {t('forumPage.welcomeBack', 'Welcome back! Log in to post.')}
                   </div>
                   <label className="flex flex-col text-sm font-semibold text-slate-600">
-                    {t('forumPage.email', 'Email')}
+                    {t('forumPage.username', 'Username')}
                     <input
-                      type="email"
-                      value={loginForm.email}
+                      type="text"
+                      value={loginForm.username}
                       onChange={(event) =>
-                        setLoginForm((previous) => ({ ...previous, email: event.target.value }))
+                        setLoginForm((previous) => ({ ...previous, username: event.target.value }))
                       }
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder="you@example.com"
+                      placeholder={t('forumPage.usernamePlaceholder', 'Choose a unique username')}
                       required
                     />
                   </label>
@@ -477,19 +392,13 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                   </button>
                 </form>
               )}
-              <p className="mt-6 text-xs text-slate-500">
-                {t(
-                  'forumPage.needAnotherEmail',
-                  'Need another email? Submit the register form again to generate a new code. Verification emails are sent with SMTP so your teacher can connect the classroom mail provider.'
-                )}
-              </p>
             </div>
           ) : (
             <div className="mt-6 flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-inner sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-600">{t('forumPage.signedInAs', 'Signed in as')}</p>
                 <p className="text-lg font-display font-semibold text-brand-dark">{user.name}</p>
-                <p className="text-sm text-slate-500">{user.email}</p>
+                <p className="text-sm text-slate-500">@{user.username}</p>
                 <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-brand-light/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-dark">
                   {user.role}
                 </p>

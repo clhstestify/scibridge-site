@@ -181,7 +181,7 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
     if (!dashboard || !user) {
       return;
     }
-    if (dashboard.viewer && dashboard.viewer.email === user.email) {
+    if (dashboard.viewer && dashboard.viewer.username === user.username) {
       onProfileUpdate?.(dashboard.viewer);
     }
   }, [dashboard, onProfileUpdate, user]);
@@ -295,7 +295,7 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
         };
       });
 
-      if (updatedUser.email === user.email) {
+      if (updatedUser.username === user.username) {
         onProfileUpdate?.(updatedUser);
       }
 
@@ -407,7 +407,7 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
         <FiShield className="mx-auto h-12 w-12 text-brand" aria-hidden />
         <h1 className="mt-6 text-3xl font-display font-semibold text-slate-900">Sign in to access the admin panel</h1>
         <p className="mt-3 text-sm text-slate-600">
-          Please register, verify your email, and log in. Administrator or teacher permissions are required to view this page.
+          Please create an account, sign in with your username, and ensure you have administrator or teacher permissions to view this page.
         </p>
       </div>
     );
@@ -440,8 +440,8 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
               {status === 'loading' && <p className="mt-1 text-sm text-slate-500">Loading dashboard data…</p>}
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              <div className="font-semibold text-slate-800">{user?.name ?? user?.email}</div>
-              <div>{user.email}</div>
+              <div className="font-semibold text-slate-800">{user?.name ?? user?.username}</div>
+              <div>@{user.username}</div>
               <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
                 {isAdmin ? 'Admin' : 'Teacher'}
               </div>
@@ -784,7 +784,7 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <div className="text-base font-semibold text-slate-900">{entry.name}</div>
-                          <div className="text-sm text-slate-600">{entry.email}</div>
+                          <div className="text-sm text-slate-600">@{entry.username}</div>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
                           <span

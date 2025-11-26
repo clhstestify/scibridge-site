@@ -22,7 +22,7 @@ const WPAdminToolbar = ({ user, onLogout }) => {
     return null;
   }
 
-  const displayName = user.name || user.email || 'Member';
+  const displayName = user.name || user.username || 'Member';
   const firstName = displayName.split(' ')[0];
   const roleLabel = formatRole(user.role);
   const initials = initialsFrom(displayName);

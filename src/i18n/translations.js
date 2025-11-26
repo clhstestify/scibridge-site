@@ -52,7 +52,7 @@ export const translations = {
       practiceEyebrow: 'Luyện tập tương tác',
       forumHeading: 'Luyện tiếng Anh cùng bạn học',
       forumDescription:
-        'Tham gia Diễn đàn SciBridge để chia sẻ cập nhật học tập, đặt câu hỏi bằng tiếng Anh và hỗ trợ các bạn khác trong các môn Vật lý, Hóa học, Sinh học và Khoa học Trái Đất. Tạo tài khoản, xác minh email và đăng nhập để chia sẻ tiếng nói của bạn một cách an toàn.',
+        'Tham gia Diễn đàn SciBridge để chia sẻ cập nhật học tập, đặt câu hỏi bằng tiếng Anh và hỗ trợ các bạn khác trong các môn Vật lý, Hóa học, Sinh học và Khoa học Trái Đất. Tạo tên đăng nhập và đăng nhập để chia sẻ tiếng nói của bạn một cách an toàn.',
       forumCta: 'Đến diễn đàn'
     },
     footer: {
@@ -495,29 +495,23 @@ export const translations = {
     forumPage: {
       title: 'Diễn đàn SciBridge',
       description:
-        'Chia sẻ ý tưởng khoa học bằng tiếng Anh, đặt câu hỏi cho bạn học và cùng luyện từ vựng học thuật. Tạo tài khoản, xác minh email và đăng nhập để tham gia thảo luận.',
+        'Chia sẻ ý tưởng khoa học bằng tiếng Anh, đặt câu hỏi cho bạn học và cùng luyện từ vựng học thuật. Tạo tên đăng nhập và đăng nhập để tham gia thảo luận.',
       register: 'Đăng ký',
-      verify: 'Xác minh email',
       login: 'Đăng nhập',
       createAccount: 'Tạo tài khoản SciBridge',
       fullName: 'Họ và tên',
       namePlaceholder: 'Ví dụ: Lan – yêu Vật lý',
+      username: 'Tên đăng nhập',
+      usernamePlaceholder: 'Chọn tên đăng nhập duy nhất',
       password: 'Mật khẩu',
       passwordPlaceholder: 'Ít nhất 8 ký tự',
-      registerCta: 'Đăng ký và gửi mã',
-      sendingCode: 'Đang gửi mã xác minh…',
-      verificationTitle: 'Xác minh địa chỉ email',
-      verificationCode: 'Mã xác minh',
-      codePlaceholder: 'Nhập 6 ký tự',
-      confirmEmail: 'Xác nhận email',
-      checkingCode: 'Đang kiểm tra mã…',
+      registerCta: 'Đăng ký và bắt đầu trò chuyện',
+      creatingAccount: 'Đang tạo tài khoản…',
       welcomeBack: 'Chào mừng trở lại! Đăng nhập để đăng bài.',
       loginPasswordPlaceholder: 'Nhập mật khẩu của bạn',
       loggingIn: 'Đang đăng nhập…',
       signedInAs: 'Đang đăng nhập với',
       signOut: 'Đăng xuất',
-      needAnotherEmail:
-        'Cần email khác? Gửi lại biểu mẫu đăng ký để nhận mã mới. Email xác minh được gửi bằng SMTP để giáo viên kết nối hệ thống thư của lớp.',
       startDiscussion: 'Bắt đầu thảo luận',
       startDiscussionDescription:
         'Chọn môn khoa học, viết trạng thái ngắn và giúp bạn học luyện tiếng Anh học thuật.',
@@ -536,7 +530,7 @@ export const translations = {
       tipCiteLabel: 'Dẫn nguồn:',
       tipCite: 'Liên kết tới bài học, bài kiểm tra SciBridge hoặc nguồn bên ngoài.',
       tipSafetyLabel: 'Giữ an toàn:',
-      tipSafety: 'Không chia sẻ mật khẩu riêng. Việc xác minh email giúp giới hạn diễn đàn cho học viên được mời.',
+      tipSafety: 'Không chia sẻ mật khẩu riêng. Chỉ sử dụng tên đăng nhập của bạn để đăng bài.',
       pleaseLogin: 'Vui lòng đăng nhập trước khi đăng bài.',
       enterIdea: 'Hãy viết ý tưởng hoặc câu hỏi trước khi chia sẻ.',
       statusShared: 'Cập nhật của bạn đã được chia sẻ với cộng đồng!',
@@ -545,9 +539,6 @@ export const translations = {
       thankForComment: 'Cảm ơn bạn đã đóng góp cho cuộc trò chuyện!',
       readyToPost: 'Bạn đã đăng nhập và sẵn sàng đăng bài!',
       signedOut: 'Đăng xuất',
-      verificationNotice:
-        'Chúng tôi gửi mã xác minh qua email bằng dịch vụ SMTP bảo mật. Nhập mã để kích hoạt tài khoản trước khi đăng bài.',
-      email: 'Email',
       subjects: {
         'English for Science': 'Tiếng Anh cho Khoa học',
         Physics: 'Vật lý',

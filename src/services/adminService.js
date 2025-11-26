@@ -1,13 +1,13 @@
 import { API_BASE_URL } from './authService';
 
 function buildHeaders(user, additionalHeaders = {}) {
-  if (!user?.email) {
+  if (!user?.username) {
     throw new Error('Signed-in user information is required for this request.');
   }
 
   return {
     'Content-Type': 'application/json',
-    'x-user-email': user.email.toLowerCase(),
+    'x-user-username': user.username.toLowerCase(),
     ...additionalHeaders
   };
 }
