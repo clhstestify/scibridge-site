@@ -2,71 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiCheckCircle, FiLock, FiLogIn, FiMessageCircle, FiSend, FiUser } from 'react-icons/fi';
 import { registerUser, loginUser } from '../services/authService';
+import { addForumComment, createForumPost, fetchForumPosts } from '../services/forumService';
 import { useLanguage } from '../context/LanguageContext.jsx';
-
-const initialPosts = [
-  {
-    id: 'post-1',
-    translationId: 'post1',
-    author: 'Maya (Physics Explorer)',
-    subject: 'Physics',
-    createdAt: '2024-04-14T10:15:00Z',
-    content:
-      'I used the velocity simulation from the Physics lessons to practice English direction words. Try describing the movement using north, south, east, west!',
-    comments: [
-      {
-        id: 'comment-1',
-        translationId: 'comment1',
-        author: 'Leo',
-        createdAt: '2024-04-14T12:05:00Z',
-        content: 'Thanks Maya! I will add arrows to my science notebook to explain directions.'
-      }
-    ]
-  },
-  {
-    id: 'post-2',
-    translationId: 'post2',
-    author: 'Sara (Future Biologist)',
-    subject: 'Biology',
-    createdAt: '2024-04-13T08:45:00Z',
-    content:
-      'Does anyone have tips for remembering the steps of photosynthesis in English? I created a song with “sunlight, water, and carbon dioxide” as the chorus.',
-    comments: [
-      {
-        id: 'comment-2',
-        translationId: 'comment2',
-        author: 'Aisha',
-        createdAt: '2024-04-13T09:10:00Z',
-        content: 'I like to make a diagram with labels: sunlight → leaves → glucose. Maybe we can share our songs?'
-      },
-      {
-        id: 'comment-3',
-        translationId: 'comment3',
-        author: 'Diego',
-        createdAt: '2024-04-13T10:02:00Z',
-        content: 'My teacher says to remember “plants use light to cook sugar.” Simple but it helps!'
-      }
-    ]
-  },
-  {
-    id: 'post-3',
-    translationId: 'post3',
-    author: 'Ms. Lopez (English Coach)',
-    subject: 'English for Science',
-    createdAt: '2024-04-12T15:30:00Z',
-    content:
-      'How do you explain lab safety rules in English? Share the verbs you use when giving instructions such as "wear", "measure", and "record".',
-    comments: [
-      {
-        id: 'comment-4',
-        translationId: 'comment4',
-        author: 'Omar',
-        createdAt: '2024-04-12T16:00:00Z',
-        content: 'I start sentences with action verbs: Wear goggles. Measure the liquid carefully. Record your results.'
-      }
-    ]
-  }
-];
 
 const subjectAccent = {
   Physics: 'bg-purple-100 text-purple-700',
@@ -86,7 +23,8 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
   const { t, language } = useLanguage();
   const locale = language === 'vi' ? 'vi' : 'en';
 
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [subject, setSubject] = useState('English for Science');
   const [statusText, setStatusText] = useState('');
   const [commentDrafts, setCommentDrafts] = useState({});
@@ -123,7 +61,37 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     setForumMessage({ key, fallback });
   };
 
-  const handleStatusSubmit = (event) => {
+  useEffect(() => {
+    const loadPosts = async () => {
+      setIsLoadingPosts(true);
+      try {
+        const { posts: fetchedPosts } = await fetchForumPosts();
+        setPosts(fetchedPosts ?? []);
+      } catch (error) {
+        setForumMessage({
+          key: 'forumPage.loadError',
+          fallback: `Could not load forum posts: ${error.message}`
+        });
+      } finally {
+        setIsLoadingPosts(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
+
+  const formatUser = (creator) => {
+    if (!creator) {
+      return '';
+    }
+    const displayName = creator.name || creator.username;
+    if (!displayName) {
+      return '';
+    }
+    return creator.username ? `${displayName} (@${creator.username})` : displayName;
+  };
+
+  const handleStatusSubmit = async (event) => {
     event.preventDefault();
     if (!user) {
       showForumMessage('forumPage.pleaseLogin', 'Please log in before posting to the forum.');
@@ -134,25 +102,25 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
       return;
     }
 
-    const newPost = {
-      id: `post-${Date.now()}`,
-      translationId: null,
-      author: `${user.name} (@${user.username})`,
-      subject,
-      createdAt: new Date().toISOString(),
-      content: statusText.trim(),
-      comments: []
-    };
+    try {
+      const { post } = await createForumPost({
+        subject,
+        content: statusText.trim(),
+        username: user.username
+      });
 
-    setPosts((previous) => [newPost, ...previous]);
-    setStatusText('');
-    showForumMessage(
-      'forumPage.statusShared',
-      'Your update has been shared with the community!'
-    );
+      setPosts((previous) => [post, ...previous]);
+      setStatusText('');
+      showForumMessage(
+        'forumPage.statusShared',
+        'Your update has been shared with the community!'
+      );
+    } catch (error) {
+      showForumMessage('forumPage.statusError', `Could not share your update: ${error.message}`);
+    }
   };
 
-  const handleCommentSubmit = (postId) => {
+  const handleCommentSubmit = async (postId) => {
     if (!user) {
       showForumMessage('forumPage.loginToComment', 'Please log in to join the discussion.');
       return;
@@ -167,24 +135,26 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
       return;
     }
 
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      translationId: null,
-      author: `${user.name} (@${user.username})`,
-      createdAt: new Date().toISOString(),
-      content: draft
-    };
+    try {
+      const { comment } = await addForumComment({
+        postId,
+        content: draft,
+        username: user.username
+      });
 
-    setPosts((previous) =>
-      previous.map((post) =>
-        post.id === postId
-          ? { ...post, comments: [...post.comments, newComment] }
-          : post
-      )
-    );
+      setPosts((previous) =>
+        previous.map((post) =>
+          post.id === postId
+            ? { ...post, comments: [...post.comments, comment] }
+            : post
+        )
+      );
 
-    setCommentDrafts((previous) => ({ ...previous, [postId]: '' }));
-    showForumMessage('forumPage.thankForComment', 'Thank you for adding to the conversation!');
+      setCommentDrafts((previous) => ({ ...previous, [postId]: '' }));
+      showForumMessage('forumPage.thankForComment', 'Thank you for adding to the conversation!');
+    } catch (error) {
+      showForumMessage('forumPage.commentError', `Could not add your comment: ${error.message}`);
+    }
   };
 
   const resetMessages = () => {
@@ -468,85 +438,102 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
               </button>
             </form>
             <div className="mt-8 space-y-6">
-              {posts.map((post) => {
-                const author = t(
-                  ['forumPage', 'posts', post.translationId ?? '', 'author'],
-                  post.author
-                );
-                const content = t(
-                  ['forumPage', 'posts', post.translationId ?? '', 'content'],
-                  post.content
-                );
-                return (
-                  <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 shadow-inner">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-base font-semibold text-brand-dark">{author}</p>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          {formatDate(post.createdAt, locale)}
-                        </p>
+              {isLoadingPosts ? (
+                <p className="text-sm text-slate-500">
+                  {t('forumPage.loadingPosts', 'Loading the latest forum posts…')}
+                </p>
+              ) : posts.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  {t('forumPage.noPosts', 'No posts yet. Start the first discussion!')}
+                </p>
+              ) : (
+                posts.map((post) => {
+                  const author = post.translationId
+                    ? t(
+                        ['forumPage', 'posts', post.translationId ?? '', 'author'],
+                        formatUser(post.createdBy) || post.author
+                      )
+                    : formatUser(post.createdBy) || post.author || t('forumPage.unknownAuthor', 'Unknown author');
+                  const content = post.translationId
+                    ? t(['forumPage', 'posts', post.translationId ?? '', 'content'], post.content)
+                    : post.content;
+                  const comments = Array.isArray(post.comments) ? post.comments : [];
+                  const subjectStyle = subjectAccent[post.subject] ?? 'bg-slate-100 text-slate-600';
+                  return (
+                    <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 shadow-inner">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-base font-semibold text-brand-dark">{author}</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            {formatDate(post.createdAt, locale)}
+                          </p>
+                        </div>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${subjectStyle}`}>
+                          {translateSubject(post.subject)}
+                        </span>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${subjectAccent[post.subject]}`}>
-                        {translateSubject(post.subject)}
-                      </span>
-                    </div>
-                    <p className="mt-4 text-sm text-slate-600">{content}</p>
-                    <div className="mt-6 space-y-4">
-                      {post.comments.map((comment) => {
-                        const commentAuthor = t(
-                          ['forumPage', 'posts', post.translationId ?? '', 'comments', comment.translationId ?? '', 'author'],
-                          comment.author
-                        );
-                        const commentContent = t(
-                          ['forumPage', 'posts', post.translationId ?? '', 'comments', comment.translationId ?? '', 'content'],
-                          comment.content
-                        );
-                        return (
-                          <div key={comment.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-brand-dark">{commentAuthor}</span>
-                              <span className="text-xs uppercase tracking-wide text-slate-400">
-                                {formatDate(comment.createdAt, locale)}
-                              </span>
+                      <p className="mt-4 text-sm text-slate-600">{content}</p>
+                      <div className="mt-6 space-y-4">
+                        {comments.map((comment) => {
+                          const commentAuthor = comment.translationId
+                            ? t(
+                                ['forumPage', 'posts', post.translationId ?? '', 'comments', comment.translationId ?? '', 'author'],
+                                formatUser(comment.createdBy) || comment.author
+                              )
+                            : formatUser(comment.createdBy) || comment.author || t('forumPage.unknownAuthor', 'Unknown author');
+                          const commentContent = comment.translationId
+                            ? t(
+                                ['forumPage', 'posts', post.translationId ?? '', 'comments', comment.translationId ?? '', 'content'],
+                                comment.content
+                              )
+                            : comment.content;
+                          return (
+                            <div key={comment.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-brand-dark">{commentAuthor}</span>
+                                <span className="text-xs uppercase tracking-wide text-slate-400">
+                                  {formatDate(comment.createdAt, locale)}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm text-slate-600">{commentContent}</p>
                             </div>
-                            <p className="mt-2 text-sm text-slate-600">{commentContent}</p>
-                          </div>
-                        );
-                      })}
-                      <form
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          handleCommentSubmit(post.id);
-                        }}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-3"
-                      >
-                        <label className="flex flex-col text-xs font-semibold text-slate-500">
-                          {t('forumPage.addComment', 'Add a comment')}
-                          <textarea
-                            value={commentDrafts[post.id] ?? ''}
-                            onChange={(event) =>
-                              setCommentDrafts((previous) => ({ ...previous, [post.id]: event.target.value }))
-                            }
-                            rows={2}
-                            className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                            placeholder={t(
-                              'forumPage.commentPlaceholder',
-                              'Give feedback using friendly science vocabulary.'
-                            )}
-                          />
-                        </label>
-                        <button
-                          type="submit"
-                          className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand/90 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
+                          );
+                        })}
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            handleCommentSubmit(post.id);
+                          }}
+                          className="rounded-xl border border-slate-200 bg-white px-4 py-3"
                         >
-                          <FiSend aria-hidden />
-                          {t('forumPage.reply', 'Reply')}
-                        </button>
-                      </form>
-                    </div>
-                  </article>
-                );
-              })}
+                          <label className="flex flex-col text-xs font-semibold text-slate-500">
+                            {t('forumPage.addComment', 'Add a comment')}
+                            <textarea
+                              value={commentDrafts[post.id] ?? ''}
+                              onChange={(event) =>
+                                setCommentDrafts((previous) => ({ ...previous, [post.id]: event.target.value }))
+                              }
+                              rows={2}
+                              className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+                              placeholder={t(
+                                'forumPage.commentPlaceholder',
+                                'Give feedback using friendly science vocabulary.'
+                              )}
+                            />
+                          </label>
+                          <button
+                            type="submit"
+                            className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand/90 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
+                          >
+                            <FiSend aria-hidden />
+                            {t('forumPage.reply', 'Reply')}
+                          </button>
+                        </form>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
             </div>
           </article>
 
