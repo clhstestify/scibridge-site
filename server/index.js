@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { readUsers, writeUsers } from './utils/userStore.js';
 import { readAdminData, writeAdminData } from './utils/adminStore.js';
+import { readForumData, writeForumData } from './utils/forumStore.js';
 
 dotenv.config();
 
@@ -196,6 +197,65 @@ app.post('/api/auth/login', async (req, res) => {
     message: 'Signed in successfully.',
     user: sanitizeUser(user)
   });
+});
+
+app.get('/api/forum/posts', async (_req, res) => {
+  const forumData = await readForumData();
+  res.json({ posts: forumData.posts });
+});
+
+app.post('/api/forum/posts', authenticateRequest, async (req, res) => {
+  const { subject, content } = req.body ?? {};
+
+  if (!subject?.trim() || !content?.trim()) {
+    return res.status(400).json({ message: 'Subject and content are required.' });
+  }
+
+  const forumData = await readForumData();
+  const creator = req.requestUser;
+
+  const post = {
+    id: uuidv4(),
+    translationId: null,
+    subject: subject.trim(),
+    createdAt: new Date().toISOString(),
+    content: content.trim(),
+    createdBy: sanitizeCreator(creator),
+    comments: []
+  };
+
+  forumData.posts.unshift(post);
+  await writeForumData(forumData);
+
+  res.status(201).json({ message: 'Post created.', post });
+});
+
+app.post('/api/forum/posts/:id/comments', authenticateRequest, async (req, res) => {
+  const { content } = req.body ?? {};
+
+  if (!content?.trim()) {
+    return res.status(400).json({ message: 'Comment content is required.' });
+  }
+
+  const forumData = await readForumData();
+  const post = forumData.posts.find((entry) => entry.id === req.params.id);
+
+  if (!post) {
+    return res.status(404).json({ message: 'Post not found.' });
+  }
+
+  const comment = {
+    id: uuidv4(),
+    translationId: null,
+    createdAt: new Date().toISOString(),
+    content: content.trim(),
+    createdBy: sanitizeCreator(req.requestUser)
+  };
+
+  post.comments.push(comment);
+  await writeForumData(forumData);
+
+  res.status(201).json({ message: 'Comment added.', comment });
 });
 
 function filterContentForUser(user, data) {
