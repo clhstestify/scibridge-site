@@ -58,7 +58,7 @@ const App = () => {
       <Navbar onSearch={setSearchQuery} user={user} onLogout={handleLogout} />
       <main className="flex-1 pb-20">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePage user={user} />} />
           <Route
             path="/subjects"
             element={

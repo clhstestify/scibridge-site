@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import ScienceChatbot from '../components/ScienceChatbot.jsx';
 
 const studentFeatures = [
   {
@@ -274,8 +275,8 @@ const localizedCopy = {
   }
 };
 
-const HomePage = () => {
-  const { language } = useLanguage();
+const HomePage = ({ user }) => {
+  const { language, t } = useLanguage();
   const [activePortal, setActivePortal] = useState('student');
 
   const copy = useMemo(() => localizedCopy[language] ?? localizedCopy.en, [language]);
@@ -389,6 +390,84 @@ const HomePage = () => {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4">
+        <div className="grid items-stretch gap-6 lg:grid-cols-[1fr,1.05fr]">
+          <div className="flex flex-col justify-center space-y-4 rounded-3xl border border-slate-100 bg-white/90 px-6 py-8 shadow-[0_15px_50px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">AI Lab</p>
+            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
+              {t('homeForum.chatbotTitle', 'Science helper chatbot')}
+            </h2>
+            <p className="text-lg text-slate-600">
+              {t(
+                'homeForum.chatbotDescription',
+                'Ask questions about your lessons in English and get clear, simple answers.'
+              )}
+            </p>
+            <ul className="space-y-2 text-sm text-slate-700">
+              <li>• {t('chatbot.description', 'Type a topic keyword and receive an easy English explanation.')}</li>
+              <li>
+                •{' '}
+                {t(
+                  'forumPage.safeCommunity',
+                  'Practice writing science questions safely with vocabulary support.'
+                )}
+              </li>
+              <li>
+                •{' '}
+                {t('forumPage.registerCta', 'Register and start chatting')}
+              </li>
+            </ul>
+            {!user && (
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                >
+                  {t('forumPage.login', 'Log in')}
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:border-brand"
+                >
+                  {t('forumPage.register', 'Register')}
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className="h-full">
+            {user ? (
+              <ScienceChatbot />
+            ) : (
+              <div className="flex h-full flex-col justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center text-slate-700">
+                <p className="text-lg font-semibold text-slate-900">
+                  {t('forumPage.loginToComment', 'Please log in to join the discussion.')}
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {t(
+                    'chatbot.placeholder',
+                    'Log in to ask about force, atoms, ecosystems, or climate.'
+                  )}
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/20 transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                  >
+                    {t('forumPage.login', 'Log in')}
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:border-brand"
+                  >
+                    {t('forumPage.register', 'Register')}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
