@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiAlertCircle, FiCheckCircle, FiLock, FiLogIn, FiMessageCircle, FiSend, FiUser } from 'react-icons/fi';
-import { registerUser, loginUser } from '../services/authService';
+import { FiAlertCircle, FiCheckCircle, FiLogIn, FiMessageCircle, FiSend, FiUser } from 'react-icons/fi';
+import { registerUser } from '../services/authService';
 import { addForumComment, createForumPost, fetchForumPosts } from '../services/forumService';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
@@ -32,7 +32,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
 
   const [authView, setAuthView] = useState(initialAuthView === 'login' ? 'login' : 'register');
   const [registerForm, setRegisterForm] = useState({ name: '', username: '', password: '' });
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [offlineForm, setOfflineForm] = useState({ username: '', displayName: '' });
   const [authMessage, setAuthMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,7 +49,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
 
   const authTabs = useMemo(() => [
     { key: 'register', label: t('forumPage.register', 'Register') },
-    { key: 'login', label: t('forumPage.login', 'Log in') }
+    { key: 'login', label: t('forumPage.login', 'Offline access') }
   ], [t]);
 
   const translateSubject = useCallback(
@@ -167,11 +167,15 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     resetMessages();
     setIsSubmitting(true);
     try {
-      const { message } = await registerUser(registerForm);
+      const { message, user: profile } = await registerUser(registerForm);
       setAuthMessage({ type: 'success', text: message });
-      setLoginForm((previous) => ({ ...previous, username: registerForm.username }));
       setRegisterForm({ name: '', username: '', password: '' });
-      setAuthView('login');
+      if (profile) {
+        onAuthSuccess?.(profile);
+        showForumMessage('forumPage.readyToPost', 'You are signed in and ready to post!');
+      } else {
+        setAuthView('login');
+      }
     } catch (error) {
       setAuthMessage({ type: 'error', text: error.message });
     } finally {
@@ -179,21 +183,32 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     }
   };
 
-  const handleLogin = async (event) => {
+  const handleOfflineLogin = (event) => {
     event.preventDefault();
     resetMessages();
-    setIsSubmitting(true);
-    try {
-      const { message, user: profile } = await loginUser(loginForm);
-      setAuthMessage({ type: 'success', text: message });
-      setLoginForm((previous) => ({ ...previous, password: '' }));
-      onAuthSuccess?.(profile);
-      showForumMessage('forumPage.readyToPost', 'You are signed in and ready to post!');
-    } catch (error) {
-      setAuthMessage({ type: 'error', text: error.message });
-    } finally {
-      setIsSubmitting(false);
+
+    const username = offlineForm.username?.trim().toLowerCase();
+    if (!username) {
+      setAuthMessage({ type: 'error', text: 'Please enter the username you registered with.' });
+      return;
     }
+
+    const profile = {
+      username,
+      name: offlineForm.displayName?.trim() || username,
+      role: 'student',
+      status: 'active'
+    };
+
+    onAuthSuccess?.(profile);
+    setAuthMessage({
+      type: 'success',
+      text: 'Offline access enabled. The server will verify your username on each action.'
+    });
+    setForumMessage({
+      key: 'forumPage.readyToPost',
+      fallback: 'You are signed in and ready to post!'
+    });
   };
 
   const AuthMessage = () => {
@@ -319,46 +334,48 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                 </form>
               )}
               {authView === 'login' && (
-                <form onSubmit={handleLogin} className="mt-4 grid gap-4 sm:grid-cols-2">
+                <form onSubmit={handleOfflineLogin} className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2 flex items-center gap-2 text-sm font-semibold text-brand-dark">
                     <FiLogIn aria-hidden />
-                    {t('forumPage.welcomeBack', 'Welcome back! Log in to post.')}
+                    {t('forumPage.login', 'Use offline login to set your username locally.')}
                   </div>
                   <label className="flex flex-col text-sm font-semibold text-slate-600">
                     {t('forumPage.username', 'Username')}
                     <input
                       type="text"
-                      value={loginForm.username}
+                      value={offlineForm.username}
                       onChange={(event) =>
-                        setLoginForm((previous) => ({ ...previous, username: event.target.value }))
+                        setOfflineForm((previous) => ({ ...previous, username: event.target.value }))
                       }
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder={t('forumPage.usernamePlaceholder', 'Choose a unique username')}
+                      placeholder={t('forumPage.usernamePlaceholder', 'Enter the username you registered')}
                       required
                     />
                   </label>
                   <label className="flex flex-col text-sm font-semibold text-slate-600">
-                    {t('forumPage.password', 'Password')}
+                    {t('forumPage.displayName', 'Display name (optional)')}
                     <input
-                      type="password"
-                      value={loginForm.password}
+                      type="text"
+                      value={offlineForm.displayName}
                       onChange={(event) =>
-                        setLoginForm((previous) => ({ ...previous, password: event.target.value }))
+                        setOfflineForm((previous) => ({ ...previous, displayName: event.target.value }))
                       }
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder={t('forumPage.loginPasswordPlaceholder', 'Enter your password')}
-                      required
+                      placeholder={t('forumPage.namePlaceholder', 'How should we show your name?')}
                     />
                   </label>
+                  <div className="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
+                    {t(
+                      'forumPage.offlineLoginNote',
+                      'API sign-in is disabled. Use the Python script at scripts/login_probe.py to verify passwords before signing in locally.'
+                    )}
+                  </div>
                   <button
                     type="submit"
-                    className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isSubmitting}
+                    className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
                   >
-                    <FiLock aria-hidden />
-                    {isSubmitting
-                      ? t('forumPage.loggingIn', 'Signing in…')
-                      : t('forumPage.login', 'Log in')}
+                    <FiLogIn aria-hidden />
+                    {t('forumPage.login', 'Enable offline access')}
                   </button>
                 </form>
               )}
