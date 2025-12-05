@@ -40,5 +40,26 @@ export const scienceWords = [
     definition: 'The gradual wearing away of rock or soil by wind, water, or ice.',
     example: 'Ocean waves cause erosion that changes the shape of the coastline.',
     source: 'Cambridge Dictionary'
+  },
+  {
+    id: 'circuit',
+    term: 'circuit',
+    definition: 'A complete path that an electric current follows.',
+    example: 'The light bulb glows when the circuit is closed.',
+    source: 'Cambridge Dictionary'
+  },
+  {
+    id: 'ecosystem',
+    term: 'ecosystem',
+    definition: 'A community of living things and their environment that work together as a system.',
+    example: 'Removing one species can harm the balance of an ecosystem.',
+    source: "Oxford Learner's Dictionaries"
+  },
+  {
+    id: 'variable',
+    term: 'variable',
+    definition: 'A factor or condition that can change and affect the results of an experiment.',
+    example: 'We kept every variable the same except the temperature.',
+    source: 'Cambridge Dictionary'
   }
 ];

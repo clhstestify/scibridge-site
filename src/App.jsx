@@ -14,6 +14,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import ForumPage from './pages/ForumPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import { useProgress } from './hooks/useProgress';
+import FlashcardsPage from './pages/FlashcardsPage.jsx';
+import DictionaryPage from './pages/DictionaryPage.jsx';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +82,8 @@ const App = () => {
             element={<LessonPage progress={progress} onComplete={markCompleted} />}
           />
           <Route path="/quizzes" element={<QuizzesPage />} />
+          <Route path="/flashcards" element={<FlashcardsPage />} />
+          <Route path="/dictionary" element={<DictionaryPage />} />
           <Route
             path="/forum"
             element={<ForumPage user={user} onAuthSuccess={handleAuthSuccess} onLogout={handleLogout} />}

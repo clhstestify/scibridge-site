@@ -8,6 +8,8 @@ const baseNavItems = [
   { path: '/', labelKey: 'navbar.home', defaultLabel: 'Home' },
   { path: '/subjects', labelKey: 'navbar.subjects', defaultLabel: 'Subjects' },
   { path: '/quizzes', labelKey: 'navbar.quizzes', defaultLabel: 'Interactive Quizzes' },
+  { path: '/flashcards', labelKey: 'navbar.flashcards', defaultLabel: 'Flashcards' },
+  { path: '/dictionary', labelKey: 'navbar.dictionary', defaultLabel: 'Dictionary' },
   { path: '/login', labelKey: 'navbar.login', defaultLabel: 'Log in' },
   { path: '/register', labelKey: 'navbar.register', defaultLabel: 'Register' },
   { path: '/resources', labelKey: 'navbar.resources', defaultLabel: 'Resources' },
