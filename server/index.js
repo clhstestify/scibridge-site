@@ -166,6 +166,39 @@ app.post('/api/auth/register', async (req, res) => {
   await writeUsers(users);
 
   res.status(201).json({
+    message: 'Account created. You can sign in now.',
+    user: sanitizeUser(newUser)
+  });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body ?? {};
+
+  if (!username?.trim() || !password) {
+    return res.status(400).json({ message: 'Username and password are required.' });
+  }
+
+  const normalizedUsername = username.toLowerCase();
+  const users = await readUsers();
+  const user = users.find((entry) => entry.username === normalizedUsername);
+
+  if (!user) {
+    return res.status(404).json({ message: 'Account not found. Please register first.' });
+  }
+
+  if (user.status === 'banned') {
+    return res.status(403).json({ message: 'This account has been banned by an administrator.' });
+  }
+
+  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+
+  if (!passwordMatches) {
+    return res.status(401).json({ message: 'Incorrect username or password.' });
+  }
+
+  res.json({
+    message: 'Signed in successfully.',
+    user: sanitizeUser(user)
     message: 'Account created and saved locally.',
     user: sanitizeUser(newUser)
   });

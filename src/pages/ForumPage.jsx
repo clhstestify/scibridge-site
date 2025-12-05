@@ -167,6 +167,16 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     resetMessages();
     setIsSubmitting(true);
     try {
+      const { message: registerMessage } = await registerUser(registerForm);
+      const { message: loginMessage, user: profile } = await loginUser({
+        username: registerForm.username,
+        password: registerForm.password
+      });
+      setAuthMessage({ type: 'success', text: `${registerMessage} ${loginMessage}`.trim() });
+      setLoginForm({ username: registerForm.username, password: '' });
+      setRegisterForm({ name: '', username: '', password: '' });
+      onAuthSuccess?.(profile);
+      showForumMessage('forumPage.readyToPost', 'You are signed in and ready to post!');
       const { message, user: profile } = await registerUser(registerForm);
       setAuthMessage({ type: 'success', text: message });
       setRegisterForm({ name: '', username: '', password: '' });
@@ -374,6 +384,8 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                     type="submit"
                     className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
                   >
+                    <FiLock aria-hidden />
+                    {isSubmitting ? t('forumPage.loggingIn', 'Signing in…') : t('forumPage.login', 'Log in')}
                     <FiLogIn aria-hidden />
                     {t('forumPage.login', 'Enable offline access')}
                   </button>
