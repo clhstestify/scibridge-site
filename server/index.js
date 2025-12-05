@@ -165,7 +165,10 @@ app.post('/api/auth/register', async (req, res) => {
   users.push(newUser);
   await writeUsers(users);
 
-  res.status(201).json({ message: 'Account created. You can sign in now.' });
+  res.status(201).json({
+    message: 'Account created. You can sign in now.',
+    user: sanitizeUser(newUser)
+  });
 });
 
 app.post('/api/auth/login', async (req, res) => {

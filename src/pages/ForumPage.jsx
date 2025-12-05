@@ -167,11 +167,16 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
     resetMessages();
     setIsSubmitting(true);
     try {
-      const { message } = await registerUser(registerForm);
-      setAuthMessage({ type: 'success', text: message });
-      setLoginForm((previous) => ({ ...previous, username: registerForm.username }));
+      const { message: registerMessage } = await registerUser(registerForm);
+      const { message: loginMessage, user: profile } = await loginUser({
+        username: registerForm.username,
+        password: registerForm.password
+      });
+      setAuthMessage({ type: 'success', text: `${registerMessage} ${loginMessage}`.trim() });
+      setLoginForm({ username: registerForm.username, password: '' });
       setRegisterForm({ name: '', username: '', password: '' });
-      setAuthView('login');
+      onAuthSuccess?.(profile);
+      showForumMessage('forumPage.readyToPost', 'You are signed in and ready to post!');
     } catch (error) {
       setAuthMessage({ type: 'error', text: error.message });
     } finally {
@@ -333,7 +338,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                         setLoginForm((previous) => ({ ...previous, username: event.target.value }))
                       }
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-                      placeholder={t('forumPage.usernamePlaceholder', 'Choose a unique username')}
+                      placeholder={t('forumPage.usernamePlaceholder', 'Enter the username you registered')}
                       required
                     />
                   </label>
@@ -356,9 +361,7 @@ const ForumPage = ({ user, onAuthSuccess, onLogout, initialAuthView = 'register'
                     disabled={isSubmitting}
                   >
                     <FiLock aria-hidden />
-                    {isSubmitting
-                      ? t('forumPage.loggingIn', 'Signing in…')
-                      : t('forumPage.login', 'Log in')}
+                    {isSubmitting ? t('forumPage.loggingIn', 'Signing in…') : t('forumPage.login', 'Log in')}
                   </button>
                 </form>
               )}
