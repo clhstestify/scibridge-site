@@ -18,7 +18,9 @@ const initialsFrom = (value) => {
 };
 
 const WPAdminToolbar = ({ user, onLogout }) => {
-  if (!user) {
+  const isAdmin = user?.role === 'admin';
+
+  if (!isAdmin) {
     return null;
   }
 

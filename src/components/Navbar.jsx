@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiGlobe } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiGlobe, FiLogOut } from 'react-icons/fi';
 import { useLanguage } from '../context/LanguageContext.jsx';
-import WPAdminToolbar from './WPAdminToolbar.jsx';
 
 const baseNavItems = [
   { path: '/', labelKey: 'navbar.home', defaultLabel: 'Home' },
@@ -22,6 +21,7 @@ const Navbar = ({ onSearch, user, onLogout }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { t, language, toggleLanguage } = useLanguage();
+  const displayName = user?.name || user?.username || 'Member';
 
   const navItems = useMemo(() => {
     const items = [...baseNavItems];
@@ -110,13 +110,22 @@ const Navbar = ({ onSearch, user, onLogout }) => {
               {language === 'en' ? 'EN' : 'VI'}
             </button>
             {user ? (
-              <WPAdminToolbar
-                user={user}
-                onLogout={() => {
-                  onLogout?.();
-                  setIsOpen(false);
-                }}
-              />
+              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm">
+                <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-dark">
+                  {displayName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onLogout?.();
+                    setIsOpen(false);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-slate-600 transition hover:text-slate-900"
+                >
+                  <FiLogOut aria-hidden />
+                  Log out
+                </button>
+              </div>
             ) : (
               <NavLink
                 to="/login"
@@ -175,13 +184,23 @@ const Navbar = ({ onSearch, user, onLogout }) => {
             </button>
             {user ? (
               <div className="rounded-2xl border border-slate-200/60 bg-slate-100/30 p-3">
-                <WPAdminToolbar
-                  user={user}
-                  onLogout={() => {
-                    onLogout?.();
-                    setIsOpen(false);
-                  }}
-                />
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{displayName}</p>
+                    <p className="text-xs text-slate-600">Signed in</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLogout?.();
+                      setIsOpen(false);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-dark"
+                  >
+                    <FiLogOut aria-hidden />
+                    Log out
+                  </button>
+                </div>
               </div>
             ) : (
               <NavLink
