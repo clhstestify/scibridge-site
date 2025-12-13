@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 body {
-  @apply min-h-screen bg-[#0b4f7f] text-slate-900 antialiased;
-  background-image: linear-gradient(135deg, #0b4f7f, #0a2f53);
+  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  background-image: linear-gradient(135deg, #f8fafc, #e2e8f0);
   background-attachment: fixed;
 }
 
