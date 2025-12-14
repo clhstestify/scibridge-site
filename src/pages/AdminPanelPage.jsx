@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiAlertTriangle,
+  FiBookOpen,
   FiCheckCircle,
   FiEdit,
   FiExternalLink,
   FiGlobe,
   FiLayers,
+  FiPlayCircle,
   FiShield,
   FiUserCheck,
   FiUsers
@@ -18,6 +20,7 @@ import {
   updateUserRole,
   updateUserStatus
 } from '../services/adminService';
+import { addLearningTrack, addQuizQuestion, getLearningTracks } from '../services/learningTrackService.js';
 import WPAdminToolbar from '../components/WPAdminToolbar.jsx';
 
 const WORDPRESS_ADMIN_URL = (import.meta.env.VITE_WORDPRESS_ADMIN_URL || '').trim();
@@ -25,6 +28,16 @@ const WORDPRESS_ADMIN_URL = (import.meta.env.VITE_WORDPRESS_ADMIN_URL || '').tri
 const defaultAnnouncement = { title: '', message: '', audience: 'global' };
 const defaultContest = { name: '', description: '', deadline: '', audience: 'global' };
 const defaultPractice = { title: '', focusArea: '', description: '', resourceUrl: '', audience: 'global' };
+const defaultTrackForm = {
+  subject: 'Mathematics',
+  gradeLevel: '10',
+  chapter: '',
+  summary: '',
+  heroImage: '',
+  documentUrl: '',
+  youtubeUrl: ''
+};
+const defaultQuizDraft = { trackId: '', prompt: '', options: ['', '', '', ''], correctIndex: 0 };
 
 const sectionIds = {
   wordpress: 'wordpress-admin-section',
@@ -32,6 +45,7 @@ const sectionIds = {
   announcements: 'admin-section-announcements',
   contests: 'admin-section-contests',
   practice: 'admin-section-practice',
+  tracks: 'admin-section-tracks',
   people: 'admin-section-people'
 };
 
@@ -142,10 +156,23 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
   const [announcementForm, setAnnouncementForm] = useState(defaultAnnouncement);
   const [contestForm, setContestForm] = useState(defaultContest);
   const [practiceForm, setPracticeForm] = useState(defaultPractice);
+  const [trackForm, setTrackForm] = useState(defaultTrackForm);
+  const [quizDraft, setQuizDraft] = useState(defaultQuizDraft);
+  const [learningTracks, setLearningTracks] = useState(() => getLearningTracks());
 
   const [roleDrafts, setRoleDrafts] = useState({});
   const [orgDrafts, setOrgDrafts] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const subjectChoices = [
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'IT',
+    'English for Science',
+    'Classroom Language'
+  ];
 
   const role = user?.role;
   const isAdmin = role === 'admin';
@@ -185,6 +212,13 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       onProfileUpdate?.(dashboard.viewer);
     }
   }, [dashboard, onProfileUpdate, user]);
+
+  useEffect(() => {
+    if (learningTracks.length === 0 || quizDraft.trackId) {
+      return;
+    }
+    setQuizDraft((previous) => ({ ...previous, trackId: learningTracks[0].id }));
+  }, [learningTracks, quizDraft.trackId]);
 
   const setRoleDraft = (userId, value) => {
     setRoleDrafts((previous) => ({ ...previous, [userId]: value }));
@@ -266,6 +300,63 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       });
       setPracticeForm(defaultPractice);
       handleSuccess('Practice set shared with your learners.');
+    } catch (error) {
+      handleError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTrackSubmit = (event) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const newTrack = addLearningTrack(trackForm);
+      setLearningTracks((previous) => [newTrack, ...previous]);
+      setTrackForm(defaultTrackForm);
+      setQuizDraft((previous) => ({ ...defaultQuizDraft, trackId: previous.trackId || newTrack.id }));
+      handleSuccess('Saved new grade-level content. Learners can see it on the home page.');
+    } catch (error) {
+      handleError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuizDraftChange = (index, value) => {
+    setQuizDraft((previous) => {
+      const options = [...previous.options];
+      options[index] = value;
+      return { ...previous, options };
+    });
+  };
+
+  const handleQuizSubmit = (event) => {
+    event.preventDefault();
+    if (!quizDraft.trackId) {
+      handleError('Select a lesson before attaching a quiz question.');
+      return;
+    }
+
+    const cleanedOptions = quizDraft.options.filter((option) => option.trim() !== '');
+    if (cleanedOptions.length < 2) {
+      handleError('Please provide at least two answer choices.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const boundedIndex = Math.min(Math.max(Number(quizDraft.correctIndex), 0), cleanedOptions.length - 1);
+      const updatedTrack = addQuizQuestion(quizDraft.trackId, {
+        prompt: quizDraft.prompt,
+        options: cleanedOptions,
+        correctIndex: boundedIndex
+      });
+      setLearningTracks((previous) =>
+        previous.map((track) => (track.id === updatedTrack.id ? updatedTrack : track))
+      );
+      setQuizDraft({ ...defaultQuizDraft, trackId: updatedTrack.id });
+      handleSuccess('Quiz question added to this lesson.');
     } catch (error) {
       handleError(error.message);
     } finally {
@@ -382,12 +473,17 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
         hint: 'Guided science-language exercises'
       },
       {
+        label: 'Grade-level lessons',
+        value: learningTracks.length,
+        hint: 'Admin-created media, docs, and quizzes'
+      },
+      {
         label: 'Active users',
         value: activeUsers,
         hint: `${users.length - activeUsers} awaiting action`
       }
     ];
-  }, [announcements.length, contests.length, practiceSets.length, users]);
+  }, [announcements.length, contests.length, learningTracks.length, practiceSets.length, users]);
 
   const navItems = useMemo(
     () => [
@@ -396,9 +492,10 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       { id: 'announcements', label: 'Announcements', icon: FiEdit, badge: announcements.length || undefined },
       { id: 'contests', label: 'Contests', icon: FiUsers, badge: contests.length || undefined },
       { id: 'practice', label: 'Practice', icon: FiUserCheck, badge: practiceSets.length || undefined },
+      { id: 'tracks', label: 'Grade content', icon: FiBookOpen, badge: learningTracks.length || undefined },
       { id: 'people', label: 'People', icon: FiShield, badge: users.length || undefined }
     ],
-    [announcements.length, contests.length, practiceSets.length, users.length]
+    [announcements.length, contests.length, learningTracks.length, practiceSets.length, users.length]
   );
 
   if (!user) {
@@ -761,6 +858,255 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                         </a>
                       )}
                     </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section id={sectionIds.tracks} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Grade-level lessons & media</h2>
+                  <p className="text-sm text-slate-600">
+                    Add Grade 10, 11, and 12 content (images, documents, YouTube) and attach quiz questions. Data saves in the
+                    browser so you can iterate quickly.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-6 lg:grid-cols-[1fr,1.1fr]">
+                <form onSubmit={handleTrackSubmit} className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Subject
+                      <select
+                        value={trackForm.subject}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, subject: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        required
+                      >
+                        {subjectChoices.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Grade
+                      <select
+                        value={trackForm.gradeLevel}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, gradeLevel: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        required
+                      >
+                        {['10', '11', '12'].map((grade) => (
+                          <option key={grade} value={grade}>
+                            Grade {grade}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Chapter or lesson title
+                    <input
+                      type="text"
+                      value={trackForm.chapter}
+                      onChange={(event) => setTrackForm((previous) => ({ ...previous, chapter: event.target.value }))}
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="Chapter 1: Algebra foundations"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Short summary
+                    <textarea
+                      value={trackForm.summary}
+                      onChange={(event) => setTrackForm((previous) => ({ ...previous, summary: event.target.value }))}
+                      className="min-h-[120px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="Warm-up problems, vocabulary, pronunciation tips..."
+                      required
+                    />
+                  </label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Cover image URL
+                      <input
+                        type="url"
+                        value={trackForm.heroImage}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, heroImage: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="https://..."
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      PDF/Doc link
+                      <input
+                        type="url"
+                        value={trackForm.documentUrl}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, documentUrl: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="https://example.com/math-grade10.pdf"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      YouTube link (optional)
+                      <input
+                        type="url"
+                        value={trackForm.youtubeUrl}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, youtubeUrl: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="https://youtube.com/watch?v=..."
+                      />
+                    </label>
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                    disabled={isSubmitting}
+                  >
+                    <FiBookOpen aria-hidden /> Save lesson
+                  </button>
+                  <p className="text-xs text-slate-500">
+                    Tip: Use cloud links for documents or YouTube for quick student access. Content stays in this browser while you iterate.
+                  </p>
+                </form>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900">Published grade content</h3>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {learningTracks.length} items
+                    </span>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {learningTracks.map((track) => (
+                      <article key={track.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
+                          <span>{track.subject}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">Grade {track.gradeLevel}</span>
+                        </div>
+                        <h4 className="text-base font-semibold text-slate-900">{track.chapter}</h4>
+                        <p className="text-sm text-slate-700">{track.summary}</p>
+                        <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-brand">
+                          {track.documentUrl && (
+                            <a
+                              href={track.documentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 hover:border-brand/60"
+                            >
+                              <FiBookOpen aria-hidden /> PDF
+                            </a>
+                          )}
+                          {track.youtubeUrl && (
+                            <a
+                              href={track.youtubeUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 hover:border-brand/60"
+                            >
+                              <FiPlayCircle aria-hidden /> YouTube
+                            </a>
+                          )}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-amber-800">
+                            {track.quizQuestions?.length || 0} quiz
+                          </span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr,1.1fr]">
+                <form onSubmit={handleQuizSubmit} className="grid gap-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Select lesson
+                      <select
+                        value={quizDraft.trackId}
+                        onChange={(event) => setQuizDraft((previous) => ({ ...previous, trackId: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      >
+                        {learningTracks.map((track) => (
+                          <option key={track.id} value={track.id}>
+                            {track.subject} · Grade {track.gradeLevel}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Correct option index (0-3)
+                      <input
+                        type="number"
+                        min="0"
+                        max="3"
+                        value={quizDraft.correctIndex}
+                        onChange={(event) => setQuizDraft((previous) => ({ ...previous, correctIndex: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      />
+                    </label>
+                  </div>
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Question prompt
+                    <textarea
+                      value={quizDraft.prompt}
+                      onChange={(event) => setQuizDraft((previous) => ({ ...previous, prompt: event.target.value }))}
+                      className="min-h-[90px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                      placeholder="What is the acceleration due to gravity on Earth?"
+                    />
+                  </label>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {quizDraft.options.map((option, index) => (
+                      <label key={index} className="grid gap-1 text-sm text-slate-700">
+                        Answer choice {index + 1}
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(event) => handleQuizDraftChange(index, event.target.value)}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="Type an answer option"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                    disabled={isSubmitting || learningTracks.length === 0}
+                  >
+                    <FiPlayCircle aria-hidden /> Attach quiz question
+                  </button>
+                  <p className="text-xs text-slate-500">Add more questions to the same lesson by submitting again.</p>
+                </form>
+
+                <div className="space-y-2 text-sm text-slate-700">
+                  <h3 className="text-base font-semibold text-slate-900">Quiz preview</h3>
+                  {learningTracks.map((track) => (
+                    <div key={track.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
+                        <span>
+                          {track.subject} · Grade {track.gradeLevel}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">
+                          {track.quizQuestions?.length || 0} questions
+                        </span>
+                      </div>
+                      {track.quizQuestions?.length ? (
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
+                          {track.quizQuestions.map((question) => (
+                            <li key={question.id} className="text-sm">
+                              {question.prompt}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-500">No questions yet.</p>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
