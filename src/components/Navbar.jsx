@@ -10,6 +10,7 @@ const baseNavItems = [
   { path: '/flashcards', labelKey: 'navbar.flashcards', defaultLabel: 'Flashcards' },
   { path: '/dictionary', labelKey: 'navbar.dictionary', defaultLabel: 'Dictionary' },
   { path: '/chatbot', labelKey: 'navbar.chatbot', defaultLabel: 'Chatbot' },
+  { path: '/profile', labelKey: 'navbar.profile', defaultLabel: 'Profile' },
   { path: '/login', labelKey: 'navbar.login', defaultLabel: 'Log in' },
   { path: '/register', labelKey: 'navbar.register', defaultLabel: 'Register' },
   { path: '/contact', labelKey: 'navbar.contact', defaultLabel: 'Contact' }
@@ -112,9 +113,12 @@ const Navbar = ({ onSearch, user, onLogout }) => {
             </button>
             {user ? (
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm">
-                <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-dark">
+                <Link
+                  to="/profile"
+                  className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-dark transition hover:bg-brand/20"
+                >
                   {displayName}
-                </span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => {
@@ -190,18 +194,25 @@ const Navbar = ({ onSearch, user, onLogout }) => {
                     <p className="text-sm font-semibold text-slate-900">{displayName}</p>
                     <p className="text-xs text-slate-600">Signed in</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onLogout?.();
-                      setIsOpen(false);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-dark"
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-dark"
                   >
-                    <FiLogOut aria-hidden />
-                    Log out
-                  </button>
+                    {t('navbar.profile', 'Profile')}
+                  </Link>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onLogout?.();
+                    setIsOpen(false);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-dark"
+                >
+                  <FiLogOut aria-hidden />
+                  Log out
+                </button>
               </div>
             ) : (
               <NavLink

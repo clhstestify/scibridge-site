@@ -7,6 +7,7 @@ export const translations = {
       flashcards: 'Flashcards',
       dictionary: 'Dictionary',
       chatbot: 'Chatbot',
+      profile: 'Profile',
       contact: 'Contact',
       login: 'Log in',
       register: 'Register',
@@ -216,6 +217,95 @@ export const translations = {
         climate: 'Weather changes every day. Climate describes long-term patterns of weather in an area.',
         fallback: "I'm still learning. Try asking about force, atoms, ecosystems, or climate."
       }
+    },
+    profilePage: {
+      eyebrow: 'Learning Profile',
+      title: 'Personalized roadmap',
+      subtitle: 'See your learning path, celebrate milestones, and give teachers a quick overview of your progress.',
+      motivation: 'Personalization boosts motivation and keeps you learning!',
+      personal: {
+        title: 'Personal info',
+        roleTeacher: 'Teacher',
+        roleStudent: 'Student',
+        edit: 'Edit profile',
+        addBio: 'Add a short bio to personalize your learning.',
+        privacy: 'Only you can edit this bio. Admins can view overall progress.',
+        tipTitle: 'Personalization tip',
+        tipBody: 'A friendly bio and avatar help mentors connect with you faster.'
+      },
+      progress: {
+        overall: 'Overall progress',
+        caption: 'Completed {count}/{total} lessons',
+        completed: 'Completed',
+        completedHint: 'Lessons finished',
+        inProgress: 'In progress',
+        inProgressHint: 'Keep the streak going',
+        quizzes: 'Quizzes',
+        quizzesHint: 'Attempted quizzes',
+        passed: 'Passed',
+        passedHint: '>= 70% score'
+      },
+      section: {
+        learning: 'What you are learning'
+      },
+      filter: {
+        label: 'Filter',
+        all: 'All subjects'
+      },
+      tabs: {
+        inProgress: 'In progress',
+        completed: 'Completed'
+      },
+      empty: {
+        inProgress: 'No lessons in progress yet.',
+        completed: 'Complete a lesson to see it here.'
+      },
+      labels: {
+        unknownSubject: 'Unknown subject',
+        unknownLesson: 'Lesson'
+      },
+      list: {
+        completedOn: 'Completed on {date}',
+        progress: 'Progress: {percent}%',
+        quizScore: 'Quiz: {score}%',
+        lastAccess: 'Last study: {time}',
+        lessonId: 'Lesson ID',
+        review: 'Review lesson',
+        continue: 'Continue'
+      },
+      activity: {
+        title: 'Activity',
+        streak: '{count}-day streak',
+        keepGoing: 'Keep going!',
+        lastStudy: 'Last study',
+        lastStudyValue: '2 hours ago',
+        totalTime: 'Total time',
+        totalTimeValue: '{hours} hours',
+        recentQuiz: 'Recent quiz',
+        recentQuizValue: 'Best score {score}%'
+      },
+      summary: {
+        title: 'Snapshot',
+        lessons: 'Lessons started',
+        completed: 'Lessons completed',
+        inProgress: 'Currently learning',
+        quizzes: 'Quizzes attempted'
+      },
+      editModal: {
+        title: 'Edit profile',
+        subtitle: 'Update your avatar and bio',
+        cancel: 'Cancel',
+        bioLabel: 'Bio (200 characters max)',
+        bioPlaceholder: 'Share your learning goals or interests...',
+        bioHint: 'Keep it friendly and concise.',
+        avatarLabel: 'Avatar',
+        upload: 'Upload image',
+        securityTitle: 'Privacy',
+        securityBody: 'You can only edit your own profile. Admins can review progress to support you.',
+        save: 'Save changes',
+        bioRequired: 'Bio is required',
+        bioTooLong: 'Bio must be under 200 characters'
+      }
     }
   },
   vi: {
@@ -226,6 +316,7 @@ export const translations = {
       flashcards: 'Flashcards',
       dictionary: 'Từ điển',
       chatbot: 'Chatbot',
+      profile: 'Hồ sơ',
       login: 'Đăng nhập',
       register: 'Đăng ký',
       contact: 'Liên hệ',
@@ -484,6 +575,15 @@ export const translations = {
         overview:
           'Tiếng Anh là môn học cốt lõi tại SciBridge. Các bài học giải thích cách đọc, viết và trình bày thí nghiệm bằng ngôn ngữ học thuật tự tin.'
       },
+      mathematics: {
+        title: 'Toán học',
+        description:
+          'Củng cố đại số, hình học và lượng giác với giải thích song ngữ rõ ràng cho từng khối.',
+        keywords: ['đại số', 'hình học', 'lượng giác'],
+        cta: 'Khám phá bài học',
+        overview:
+          'Rèn sự tự tin cho ba khối 10, 11, 12 với bài tập có hướng dẫn và ghi chú giáo viên.'
+      },
       physics: {
         title: 'Vật lý',
         description:
@@ -510,6 +610,15 @@ export const translations = {
         overview:
           'Mở rộng kỹ năng viết và đọc tiếng Anh bằng cách học về tế bào, hệ cơ quan và hệ sinh thái với lời giải thích thân thiện.'
       },
+      'information-technology': {
+        title: 'Công nghệ thông tin',
+        description:
+          'Học lập trình, mạng máy tính và kỹ năng số với ghi chú song ngữ sẵn sàng để giáo viên cập nhật.',
+        keywords: ['lập trình', 'mạng', 'an toàn số'],
+        cta: 'Khám phá bài học',
+        overview:
+          'Theo dõi ba khối lớp với chỗ trống để admin thêm video, slide và dự án thực hành IT.'
+      },
       'earth-science': {
         title: 'Khoa học Trái Đất (Mở rộng)',
         description: 'Mở rộng: Dùng tiếng Anh để giải thích Trái Đất, đá, thời tiết, khí hậu và các hiện tượng không gian.',
@@ -517,6 +626,15 @@ export const translations = {
         cta: 'Khám phá bài học',
         overview:
           'Mở rộng khả năng hiểu tiếng Anh khi khám phá Trái Đất năng động, mô hình thời tiết và hệ Mặt Trời.'
+      },
+      'vietnamese-language': {
+        title: 'Tiếng Việt',
+        description:
+          'Luyện phát âm, đọc hiểu và ngữ pháp với tài liệu và bài tập sẽ được giáo viên cập nhật.',
+        keywords: ['ngữ âm', 'đọc hiểu', 'ngữ pháp'],
+        cta: 'Khám phá bài học',
+        overview:
+          'Mỗi khối có sẵn chỗ để thêm văn bản, âm thanh và bài viết giúp học sinh luyện tập hiệu quả.'
       }
     },
     lessons: {
@@ -823,6 +941,95 @@ export const translations = {
         fallback: 'Tôi vẫn đang học. Hãy thử hỏi về lực, nguyên tử, hệ sinh thái hoặc khí hậu nhé.'
       }
     },
+    profilePage: {
+      eyebrow: 'Hồ sơ học tập',
+      title: 'Lộ trình cá nhân hóa',
+      subtitle: 'Xem bạn đang ở đâu, ăn mừng cột mốc và giúp giáo viên theo dõi tiến độ.',
+      motivation: 'Cá nhân hóa giúp tăng động lực học và gắn kết.',
+      personal: {
+        title: 'Thông tin cá nhân',
+        roleTeacher: 'Giáo viên',
+        roleStudent: 'Học sinh',
+        edit: 'Chỉnh sửa hồ sơ',
+        addBio: 'Thêm mô tả ngắn để cá nhân hóa hành trình học.',
+        privacy: 'Bạn chỉ chỉnh sửa hồ sơ của mình. Admin có thể xem tiến độ tổng quan.',
+        tipTitle: 'Mẹo cá nhân hóa',
+        tipBody: 'Bio và avatar thân thiện giúp cố vấn kết nối nhanh hơn.'
+      },
+      progress: {
+        overall: 'Tiến trình tổng',
+        caption: 'Hoàn thành {count}/{total} bài',
+        completed: 'Đã hoàn thành',
+        completedHint: 'Bài đã học',
+        inProgress: 'Đang học',
+        inProgressHint: 'Duy trì streak nhé',
+        quizzes: 'Quiz',
+        quizzesHint: 'Quiz đã làm',
+        passed: 'Đạt',
+        passedHint: '>= 70% điểm'
+      },
+      section: {
+        learning: 'Bạn đang học gì'
+      },
+      filter: {
+        label: 'Bộ lọc',
+        all: 'Tất cả môn'
+      },
+      tabs: {
+        inProgress: 'Đang học',
+        completed: 'Đã hoàn thành'
+      },
+      empty: {
+        inProgress: 'Chưa có bài đang học.',
+        completed: 'Hoàn thành một bài để hiển thị tại đây.'
+      },
+      labels: {
+        unknownSubject: 'Chủ đề chưa rõ',
+        unknownLesson: 'Bài học'
+      },
+      list: {
+        completedOn: 'Hoàn thành ngày {date}',
+        progress: 'Tiến độ: {percent}%',
+        quizScore: 'Quiz: {score}%',
+        lastAccess: 'Lần học gần nhất: {time}',
+        lessonId: 'Mã bài học',
+        review: 'Xem lại bài',
+        continue: 'Tiếp tục'
+      },
+      activity: {
+        title: 'Hoạt động',
+        streak: 'Chuỗi {count} ngày',
+        keepGoing: 'Tiếp tục nhé!',
+        lastStudy: 'Lần học gần nhất',
+        lastStudyValue: 'Cách đây 2 giờ',
+        totalTime: 'Tổng thời gian',
+        totalTimeValue: '{hours} giờ',
+        recentQuiz: 'Quiz gần nhất',
+        recentQuizValue: 'Điểm cao nhất {score}%'
+      },
+      summary: {
+        title: 'Tóm tắt nhanh',
+        lessons: 'Bài đã bắt đầu',
+        completed: 'Bài đã hoàn thành',
+        inProgress: 'Đang học',
+        quizzes: 'Quiz đã làm'
+      },
+      editModal: {
+        title: 'Chỉnh sửa hồ sơ',
+        subtitle: 'Cập nhật avatar và bio',
+        cancel: 'Hủy',
+        bioLabel: 'Giới thiệu (tối đa 200 ký tự)',
+        bioPlaceholder: 'Chia sẻ mục tiêu hoặc sở thích học tập...',
+        bioHint: 'Hãy viết ngắn gọn, tích cực.',
+        avatarLabel: 'Ảnh đại diện',
+        upload: 'Tải ảnh lên',
+        securityTitle: 'Bảo mật',
+        securityBody: 'Bạn chỉ sửa hồ sơ của chính mình. Admin xem tiến độ để hỗ trợ.',
+        save: 'Lưu thay đổi',
+        bioRequired: 'Bio không được để trống',
+        bioTooLong: 'Bio không quá 200 ký tự'
+      }
+    },
     quizCard: {
       explanationCorrect: 'Chính xác',
       explanationIncorrect: 'Chưa đúng'
@@ -923,10 +1130,13 @@ export const translations = {
       signedOut: 'Đăng xuất',
       subjects: {
         'English for Science': 'Tiếng Anh cho Khoa học',
+        Mathematics: 'Toán học',
         Physics: 'Vật lý',
         Chemistry: 'Hóa học',
         Biology: 'Sinh học',
-        'Earth Science': 'Khoa học Trái Đất'
+        'Earth Science': 'Khoa học Trái Đất',
+        'Information Technology': 'Công nghệ thông tin',
+        'Vietnamese Language': 'Tiếng Việt'
       },
       posts: {
         post1: {

@@ -17,6 +17,7 @@ import { useProgress } from './hooks/useProgress';
 import FlashcardsPage from './pages/FlashcardsPage.jsx';
 import DictionaryPage from './pages/DictionaryPage.jsx';
 import ChatbotPage from './pages/ChatbotPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +104,10 @@ const App = () => {
           <Route
             path="/admin"
             element={<AdminPanelPage user={user} onProfileUpdate={handleProfileUpdate} onLogout={handleLogout} />}
+          />
+          <Route
+            path="/profile"
+            element={<ProfilePage user={user} onProfileUpdate={handleProfileUpdate} progress={progress} />}
           />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/about" element={<AboutPage />} />

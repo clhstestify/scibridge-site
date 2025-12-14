@@ -50,6 +50,53 @@ export const subjects = [
     ]
   },
   {
+    id: 'mathematics',
+    title: 'Mathematics',
+    description:
+      'Strengthen algebra, geometry, and trigonometry skills with clear bilingual explanations for every grade level.',
+    heroImage:
+      'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=1600&q=80',
+    color: 'from-sky-100 to-sky-300',
+    keywords: ['algebra', 'geometry', 'trigonometry'],
+    overview:
+      'Build confidence across Grades 10, 11, and 12 with structured practice and teacher-guided notes for each math topic.',
+    lessons: [
+      {
+        id: 'grade-10-math',
+        title: 'Grade 10 Mathematics',
+        summary: 'Core algebra foundations with space for teacher-uploaded examples and practice sets.',
+        image:
+          'https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['linear equations', 'functions', 'proof'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 10.']
+      },
+      {
+        id: 'grade-11-math',
+        title: 'Grade 11 Mathematics',
+        summary: 'Advanced algebra and geometry modules with placeholders for administrator content.',
+        image:
+          'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['quadratics', 'vectors', 'transformations'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 11.']
+      },
+      {
+        id: 'grade-12-math',
+        title: 'Grade 12 Mathematics',
+        summary: 'Exam-focused trigonometry and calculus prep ready for admins to populate with lessons.',
+        image:
+          'https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['trigonometry', 'limits', 'derivatives'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 12.']
+      }
+    ]
+  },
+  {
     id: 'physics',
     title: 'Physics',
     description:
@@ -91,6 +138,53 @@ export const subjects = [
           'Kinetic energy is the energy of motion. Potential energy is stored energy, like a book on a shelf.',
           'Thermal energy is the energy of moving particles. Electrical energy travels in wires and powers lights.'
         ]
+      }
+    ]
+  },
+  {
+    id: 'information-technology',
+    title: 'Information Technology',
+    description:
+      'Learn programming, networking, and digital literacy with short bilingual notes ready for teacher uploads.',
+    heroImage:
+      'https://images.unsplash.com/photo-1518779578993-ec3579fee39f?auto=format&fit=crop&w=1600&q=80',
+    color: 'from-fuchsia-100 to-fuchsia-300',
+    keywords: ['coding', 'networking', 'digital citizenship'],
+    overview:
+      'Follow three grade bands with space for admin-added videos, slides, and hands-on IT projects.',
+    lessons: [
+      {
+        id: 'grade-10-it',
+        title: 'Grade 10 IT',
+        summary: 'Introductory coding and hardware basics with placeholders for classroom resources.',
+        image:
+          'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['algorithm', 'binary', 'hardware'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 10.']
+      },
+      {
+        id: 'grade-11-it',
+        title: 'Grade 11 IT',
+        summary: 'Networking, databases, and web foundations awaiting admin-provided practice tasks.',
+        image:
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['network', 'database', 'protocol'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 11.']
+      },
+      {
+        id: 'grade-12-it',
+        title: 'Grade 12 IT',
+        summary: 'Software development projects and cybersecurity topics ready for admin uploads.',
+        image:
+          'https://images.unsplash.com/photo-1483478550801-ceba5fe50e8e?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['cybersecurity', 'debugging', 'deployment'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 12.']
       }
     ]
   },
@@ -220,6 +314,53 @@ export const subjects = [
           'Climate zones can be tropical, temperate, or polar. They depend on latitude and other factors.',
           'Climate change happens when long-term patterns shift. Human activities can speed up these changes.'
         ]
+      }
+    ]
+  },
+  {
+    id: 'vietnamese-language',
+    title: 'Vietnamese Language',
+    description:
+      'Practice phonetics, reading, and grammar with admin-curated stories and exercises for every upper-secondary grade.',
+    heroImage:
+      'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1600&q=80',
+    color: 'from-amber-100 to-amber-300',
+    keywords: ['phonetics', 'reading', 'grammar'],
+    overview:
+      'Each grade band includes placeholders where administrators can add texts, audio clips, and writing prompts.',
+    lessons: [
+      {
+        id: 'grade-10-vietnamese',
+        title: 'Khối 10 - Tiếng Việt',
+        summary: 'Nền tảng phát âm và đọc hiểu, sẵn sàng để admin tải lên ví dụ và bài tập.',
+        image:
+          'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['ngữ âm', 'từ vựng', 'đọc hiểu'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 10.']
+      },
+      {
+        id: 'grade-11-vietnamese',
+        title: 'Khối 11 - Tiếng Việt',
+        summary: 'Ngữ pháp nâng cao và luyện viết với chỗ trống cho tài liệu do admin cung cấp.',
+        image:
+          'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['ngữ pháp', 'phong cách', 'thuyết minh'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 11.']
+      },
+      {
+        id: 'grade-12-vietnamese',
+        title: 'Khối 12 - Tiếng Việt',
+        summary: 'Ôn luyện tổng hợp với khung bài viết và đề tài sẽ được admin cập nhật.',
+        image:
+          'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: '',
+        animationUrl: '',
+        keyVocabulary: ['phân tích', 'lập luận', 'diễn đạt'],
+        content: ['Nội dung sẽ được admin bổ sung cho khối lớp 12.']
       }
     ]
   }
