@@ -7,6 +7,7 @@ import {
   FiExternalLink,
   FiGlobe,
   FiLayers,
+  FiList,
   FiPlayCircle,
   FiShield,
   FiUserCheck,
@@ -20,7 +21,13 @@ import {
   updateUserRole,
   updateUserStatus
 } from '../services/adminService';
-import { addLearningTrack, addQuizQuestion, getLearningTracks } from '../services/learningTrackService.js';
+import {
+  addChapter,
+  addLearningTrack,
+  addLesson,
+  addQuizQuestion,
+  getLearningTracks
+} from '../services/learningTrackService.js';
 import WPAdminToolbar from '../components/WPAdminToolbar.jsx';
 
 const WORDPRESS_ADMIN_URL = (import.meta.env.VITE_WORDPRESS_ADMIN_URL || '').trim();
@@ -31,12 +38,13 @@ const defaultPractice = { title: '', focusArea: '', description: '', resourceUrl
 const defaultTrackForm = {
   subject: 'Mathematics',
   gradeLevel: '10',
-  chapter: '',
   summary: '',
   heroImage: '',
   documentUrl: '',
   youtubeUrl: ''
 };
+const defaultChapterForm = { trackId: '', title: '', description: '' };
+const defaultLessonForm = { trackId: '', chapterId: '', title: '', vocab: '', practice: '', dialogue: '' };
 const defaultQuizDraft = { trackId: '', prompt: '', options: ['', '', '', ''], correctIndex: 0 };
 
 const sectionIds = {
@@ -157,6 +165,8 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
   const [contestForm, setContestForm] = useState(defaultContest);
   const [practiceForm, setPracticeForm] = useState(defaultPractice);
   const [trackForm, setTrackForm] = useState(defaultTrackForm);
+  const [chapterForm, setChapterForm] = useState(defaultChapterForm);
+  const [lessonForm, setLessonForm] = useState(defaultLessonForm);
   const [quizDraft, setQuizDraft] = useState(defaultQuizDraft);
   const [learningTracks, setLearningTracks] = useState(() => getLearningTracks());
 
@@ -219,6 +229,28 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
     }
     setQuizDraft((previous) => ({ ...previous, trackId: learningTracks[0].id }));
   }, [learningTracks, quizDraft.trackId]);
+
+  useEffect(() => {
+    if (!learningTracks.length) return;
+    const firstTrackId = learningTracks[0].id;
+    setChapterForm((previous) => ({ ...previous, trackId: previous.trackId || firstTrackId }));
+    setLessonForm((previous) => ({
+      ...previous,
+      trackId: previous.trackId || firstTrackId,
+      chapterId: previous.chapterId || learningTracks[0].chapters?.[0]?.id || ''
+    }));
+  }, [learningTracks]);
+
+  useEffect(() => {
+    if (!lessonForm.trackId) return;
+    const track = learningTracks.find((entry) => entry.id === lessonForm.trackId);
+    if (!track) return;
+    const firstChapterId = track.chapters?.[0]?.id || '';
+    const chapterExists = track.chapters?.some((chapter) => chapter.id === lessonForm.chapterId);
+    if (!chapterExists && firstChapterId !== lessonForm.chapterId) {
+      setLessonForm((previous) => ({ ...previous, chapterId: firstChapterId }));
+    }
+  }, [learningTracks, lessonForm.trackId, lessonForm.chapterId]);
 
   const setRoleDraft = (userId, value) => {
     setRoleDrafts((previous) => ({ ...previous, [userId]: value }));
@@ -316,6 +348,51 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       setTrackForm(defaultTrackForm);
       setQuizDraft((previous) => ({ ...defaultQuizDraft, trackId: previous.trackId || newTrack.id }));
       handleSuccess('Saved new grade-level content. Learners can see it on the home page.');
+    } catch (error) {
+      handleError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChapterSubmit = (event) => {
+    event.preventDefault();
+    if (!chapterForm.trackId) {
+      handleError('Chọn khối trước khi thêm chapter.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      addChapter(chapterForm.trackId, { title: chapterForm.title, description: chapterForm.description });
+      setLearningTracks(getLearningTracks());
+      setChapterForm((previous) => ({ ...previous, title: '', description: '' }));
+      handleSuccess('Đã thêm chapter mới. Hãy thêm lesson và nội dung để hiển thị VOCAB/PRACTICE/DIALOGUE.');
+    } catch (error) {
+      handleError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLessonSubmit = (event) => {
+    event.preventDefault();
+    if (!lessonForm.trackId || !lessonForm.chapterId) {
+      handleError('Chọn khối và chapter trước khi thêm lesson.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      addLesson(lessonForm.trackId, lessonForm.chapterId, {
+        title: lessonForm.title,
+        sections: {
+          vocab: lessonForm.vocab,
+          practice: lessonForm.practice,
+          dialogue: lessonForm.dialogue
+        }
+      });
+      setLearningTracks(getLearningTracks());
+      setLessonForm((previous) => ({ ...previous, title: '', vocab: '', practice: '', dialogue: '' }));
+      handleSuccess('Đã lưu lesson với 3 mục VOCAB/PRACTICE/DIALOGUE.');
     } catch (error) {
       handleError(error.message);
     } finally {
@@ -866,169 +943,110 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
             <section id={sectionIds.tracks} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Grade-level lessons & media</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Grade → Chapter → Lesson (3 mục)</h2>
                   <p className="text-sm text-slate-600">
-                    Add Grade 10, 11, and 12 content (images, documents, YouTube) and attach quiz questions. Data saves in the
-                    browser so you can iterate quickly.
+                    Làm đúng flow mẫu: Khối 10 có 7 chapter, chọn Chapter 4 rồi Lesson 7 sẽ thấy VOCAB/PRACTICE/DIALOGUE. Dữ
+                    liệu lưu tại trình duyệt cho admin thử nghiệm nhanh.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-6 lg:grid-cols-[1fr,1.1fr]">
-                <form onSubmit={handleTrackSubmit} className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="grid gap-4 md:grid-cols-2">
+              <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr,1fr]">
+                <div className="space-y-4">
+                  <form onSubmit={handleTrackSubmit} className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">1) Tạo khối (grade)</p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Subject
+                        <select
+                          value={trackForm.subject}
+                          onChange={(event) => setTrackForm((previous) => ({ ...previous, subject: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          required
+                        >
+                          {subjectChoices.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Grade
+                        <select
+                          value={trackForm.gradeLevel}
+                          onChange={(event) => setTrackForm((previous) => ({ ...previous, gradeLevel: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          required
+                        >
+                          {['10', '11', '12'].map((grade) => (
+                            <option key={grade} value={grade}>
+                              Grade {grade}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
                     <label className="grid gap-1 text-sm text-slate-700">
-                      Subject
-                      <select
-                        value={trackForm.subject}
-                        onChange={(event) => setTrackForm((previous) => ({ ...previous, subject: event.target.value }))}
-                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        required
-                      >
-                        {subjectChoices.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="grid gap-1 text-sm text-slate-700">
-                      Grade
-                      <select
-                        value={trackForm.gradeLevel}
-                        onChange={(event) => setTrackForm((previous) => ({ ...previous, gradeLevel: event.target.value }))}
-                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        required
-                      >
-                        {['10', '11', '12'].map((grade) => (
-                          <option key={grade} value={grade}>
-                            Grade {grade}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <label className="grid gap-1 text-sm text-slate-700">
-                    Chapter or lesson title
-                    <input
-                      type="text"
-                      value={trackForm.chapter}
-                      onChange={(event) => setTrackForm((previous) => ({ ...previous, chapter: event.target.value }))}
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="Chapter 1: Algebra foundations"
-                      required
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm text-slate-700">
-                    Short summary
-                    <textarea
-                      value={trackForm.summary}
-                      onChange={(event) => setTrackForm((previous) => ({ ...previous, summary: event.target.value }))}
-                      className="min-h-[120px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="Warm-up problems, vocabulary, pronunciation tips..."
-                      required
-                    />
-                  </label>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="grid gap-1 text-sm text-slate-700">
-                      Cover image URL
-                      <input
-                        type="url"
-                        value={trackForm.heroImage}
-                        onChange={(event) => setTrackForm((previous) => ({ ...previous, heroImage: event.target.value }))}
-                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        placeholder="https://..."
+                      Grade summary
+                      <textarea
+                        value={trackForm.summary}
+                        onChange={(event) => setTrackForm((previous) => ({ ...previous, summary: event.target.value }))}
+                        className="min-h-[90px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="Ví dụ: Khối 10 có 7 chapter. Chọn Chapter 4 để xem Lesson 7 với 3 mục."
                         required
                       />
                     </label>
-                    <label className="grid gap-1 text-sm text-slate-700">
-                      PDF/Doc link
-                      <input
-                        type="url"
-                        value={trackForm.documentUrl}
-                        onChange={(event) => setTrackForm((previous) => ({ ...previous, documentUrl: event.target.value }))}
-                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        placeholder="https://example.com/math-grade10.pdf"
-                      />
-                    </label>
-                    <label className="grid gap-1 text-sm text-slate-700">
-                      YouTube link (optional)
-                      <input
-                        type="url"
-                        value={trackForm.youtubeUrl}
-                        onChange={(event) => setTrackForm((previous) => ({ ...previous, youtubeUrl: event.target.value }))}
-                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        placeholder="https://youtube.com/watch?v=..."
-                      />
-                    </label>
-                  </div>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
-                    disabled={isSubmitting}
-                  >
-                    <FiBookOpen aria-hidden /> Save lesson
-                  </button>
-                  <p className="text-xs text-slate-500">
-                    Tip: Use cloud links for documents or YouTube for quick student access. Content stays in this browser while you iterate.
-                  </p>
-                </form>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Cover image URL
+                        <input
+                          type="url"
+                          value={trackForm.heroImage}
+                          onChange={(event) => setTrackForm((previous) => ({ ...previous, heroImage: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="https://..."
+                          required
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        PDF/Doc link (optional)
+                        <input
+                          type="url"
+                          value={trackForm.documentUrl}
+                          onChange={(event) => setTrackForm((previous) => ({ ...previous, documentUrl: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="https://example.com/grade10.pdf"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        YouTube link (optional)
+                        <input
+                          type="url"
+                          value={trackForm.youtubeUrl}
+                          onChange={(event) => setTrackForm((previous) => ({ ...previous, youtubeUrl: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="https://youtube.com/watch?v=..."
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                      disabled={isSubmitting}
+                    >
+                      <FiBookOpen aria-hidden /> Lưu khối
+                    </button>
+                    <p className="text-xs text-slate-500">Tạo khối xong thì thêm chapter và lesson bên dưới.</p>
+                  </form>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">Published grade content</h3>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                      {learningTracks.length} items
-                    </span>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {learningTracks.map((track) => (
-                      <article key={track.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
-                          <span>{track.subject}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">Grade {track.gradeLevel}</span>
-                        </div>
-                        <h4 className="text-base font-semibold text-slate-900">{track.chapter}</h4>
-                        <p className="text-sm text-slate-700">{track.summary}</p>
-                        <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-brand">
-                          {track.documentUrl && (
-                            <a
-                              href={track.documentUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 hover:border-brand/60"
-                            >
-                              <FiBookOpen aria-hidden /> PDF
-                            </a>
-                          )}
-                          {track.youtubeUrl && (
-                            <a
-                              href={track.youtubeUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 hover:border-brand/60"
-                            >
-                              <FiPlayCircle aria-hidden /> YouTube
-                            </a>
-                          )}
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-amber-800">
-                            {track.quizQuestions?.length || 0} quiz
-                          </span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr,1.1fr]">
-                <form onSubmit={handleQuizSubmit} className="grid gap-3">
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <form onSubmit={handleChapterSubmit} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="text-sm font-semibold text-slate-900">2) Thêm chapter cho khối</p>
                     <label className="grid gap-1 text-sm text-slate-700">
-                      Select lesson
+                      Chọn khối
                       <select
-                        value={quizDraft.trackId}
-                        onChange={(event) => setQuizDraft((previous) => ({ ...previous, trackId: event.target.value }))}
+                        value={chapterForm.trackId}
+                        onChange={(event) => setChapterForm((previous) => ({ ...previous, trackId: event.target.value }))}
                         className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
                       >
                         {learningTracks.map((track) => (
@@ -1039,75 +1057,249 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                       </select>
                     </label>
                     <label className="grid gap-1 text-sm text-slate-700">
-                      Correct option index (0-3)
+                      Chapter title (VD: Chapter 4)
                       <input
-                        type="number"
-                        min="0"
-                        max="3"
-                        value={quizDraft.correctIndex}
-                        onChange={(event) => setQuizDraft((previous) => ({ ...previous, correctIndex: event.target.value }))}
+                        type="text"
+                        value={chapterForm.title}
+                        onChange={(event) => setChapterForm((previous) => ({ ...previous, title: event.target.value }))}
                         className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="Chapter 4"
+                        required
                       />
                     </label>
-                  </div>
-                  <label className="grid gap-1 text-sm text-slate-700">
-                    Question prompt
-                    <textarea
-                      value={quizDraft.prompt}
-                      onChange={(event) => setQuizDraft((previous) => ({ ...previous, prompt: event.target.value }))}
-                      className="min-h-[90px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="What is the acceleration due to gravity on Earth?"
-                    />
-                  </label>
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {quizDraft.options.map((option, index) => (
-                      <label key={index} className="grid gap-1 text-sm text-slate-700">
-                        Answer choice {index + 1}
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(event) => handleQuizDraftChange(index, event.target.value)}
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Mô tả ngắn
+                      <textarea
+                        value={chapterForm.description}
+                        onChange={(event) => setChapterForm((previous) => ({ ...previous, description: event.target.value }))}
+                        className="min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="Học từ vựng thí nghiệm hóa học"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                      disabled={isSubmitting || learningTracks.length === 0}
+                    >
+                      <FiLayers aria-hidden /> Lưu chapter
+                    </button>
+                  </form>
+
+                  <form onSubmit={handleLessonSubmit} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="text-sm font-semibold text-slate-900">3) Thêm lesson với 3 mục</p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Khối
+                        <select
+                          value={lessonForm.trackId}
+                          onChange={(event) =>
+                            setLessonForm((previous) => ({ ...previous, trackId: event.target.value, chapterId: '' }))
+                          }
                           className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                          placeholder="Type an answer option"
+                        >
+                          {learningTracks.map((track) => (
+                            <option key={track.id} value={track.id}>
+                              {track.subject} · Grade {track.gradeLevel}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Chapter
+                        <select
+                          value={lessonForm.chapterId}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, chapterId: event.target.value }))}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        >
+                          {(learningTracks.find((track) => track.id === lessonForm.trackId)?.chapters || []).map((chapter) => (
+                            <option key={chapter.id} value={chapter.id}>
+                              {chapter.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <label className="grid gap-1 text-sm text-slate-700">
+                      Lesson title (VD: Lesson 7)
+                      <input
+                        type="text"
+                        value={lessonForm.title}
+                        onChange={(event) => setLessonForm((previous) => ({ ...previous, title: event.target.value }))}
+                        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="Lesson 7"
+                        required
+                      />
+                    </label>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        VOCAB
+                        <textarea
+                          value={lessonForm.vocab}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, vocab: event.target.value }))}
+                          className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="Danh sách từ vựng"
                         />
                       </label>
-                    ))}
-                  </div>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
-                    disabled={isSubmitting || learningTracks.length === 0}
-                  >
-                    <FiPlayCircle aria-hidden /> Attach quiz question
-                  </button>
-                  <p className="text-xs text-slate-500">Add more questions to the same lesson by submitting again.</p>
-                </form>
-
-                <div className="space-y-2 text-sm text-slate-700">
-                  <h3 className="text-base font-semibold text-slate-900">Quiz preview</h3>
-                  {learningTracks.map((track) => (
-                    <div key={track.id} className="rounded-lg border border-slate-200 bg-white p-3">
-                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
-                        <span>
-                          {track.subject} · Grade {track.gradeLevel}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">
-                          {track.quizQuestions?.length || 0} questions
-                        </span>
-                      </div>
-                      {track.quizQuestions?.length ? (
-                        <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
-                          {track.quizQuestions.map((question) => (
-                            <li key={question.id} className="text-sm">
-                              {question.prompt}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-1 text-xs text-slate-500">No questions yet.</p>
-                      )}
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        PRACTICE
+                        <textarea
+                          value={lessonForm.practice}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, practice: event.target.value }))}
+                          className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="Bài tập/quiz"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        DIALOGUE
+                        <textarea
+                          value={lessonForm.dialogue}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, dialogue: event.target.value }))}
+                          className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="Hội thoại mẫu"
+                        />
+                      </label>
                     </div>
-                  ))}
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                      disabled={isSubmitting || learningTracks.length === 0}
+                    >
+                      <FiList aria-hidden /> Lưu lesson 3 mục
+                    </button>
+                  </form>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-slate-900">Published grade content</h3>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                        {learningTracks.length} khối
+                      </span>
+                    </div>
+                    <div className="grid gap-3">
+                      {learningTracks.map((track) => (
+                        <article key={track.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
+                            <span>{track.subject}</span>
+                            <span className="rounded-full bg-white px-2 py-1 text-slate-700">Grade {track.gradeLevel}</span>
+                          </div>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">{track.summary}</p>
+                          <div className="mt-2 text-xs text-slate-600">
+                            <p>Chapters: {track.chapters?.length || 0}</p>
+                            <p>Quiz: {track.quizQuestions?.length || 0} câu</p>
+                          </div>
+                          <div className="mt-2 space-y-2 text-sm text-slate-700">
+                            {(track.chapters || []).map((chapter) => (
+                              <div key={chapter.id} className="rounded border border-slate-200 bg-white p-2">
+                                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
+                                  <span>{chapter.title}</span>
+                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">{chapter.lessons?.length || 0} lessons</span>
+                                </div>
+                                <ul className="mt-1 space-y-1 text-xs text-slate-700">
+                                  {(chapter.lessons || []).map((lesson) => (
+                                    <li key={lesson.id} className="rounded bg-slate-50 px-2 py-1">
+                                      <span className="font-semibold text-brand">{lesson.title}</span> · VOCAB | PRACTICE | DIALOGUE
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 xl:grid-cols-[1fr,1.05fr]">
+                    <form onSubmit={handleQuizSubmit} className="grid gap-3">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="grid gap-1 text-sm text-slate-700">
+                          Select lesson
+                          <select
+                            value={quizDraft.trackId}
+                            onChange={(event) => setQuizDraft((previous) => ({ ...previous, trackId: event.target.value }))}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          >
+                            {learningTracks.map((track) => (
+                              <option key={track.id} value={track.id}>
+                                {track.subject} · Grade {track.gradeLevel}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1 text-sm text-slate-700">
+                          Correct option index (0-3)
+                          <input
+                            type="number"
+                            min="0"
+                            max="3"
+                            value={quizDraft.correctIndex}
+                            onChange={(event) => setQuizDraft((previous) => ({ ...previous, correctIndex: event.target.value }))}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          />
+                        </label>
+                      </div>
+                      <label className="grid gap-1 text-sm text-slate-700">
+                        Question prompt
+                        <textarea
+                          value={quizDraft.prompt}
+                          onChange={(event) => setQuizDraft((previous) => ({ ...previous, prompt: event.target.value }))}
+                          className="min-h-[90px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                          placeholder="What is the acceleration due to gravity on Earth?"
+                        />
+                      </label>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {quizDraft.options.map((option, index) => (
+                          <label key={index} className="grid gap-1 text-sm text-slate-700">
+                            Answer choice {index + 1}
+                            <input
+                              type="text"
+                              value={option}
+                              onChange={(event) => handleQuizDraftChange(index, event.target.value)}
+                              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              placeholder="Type an answer option"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand/60"
+                        disabled={isSubmitting || learningTracks.length === 0}
+                      >
+                        <FiPlayCircle aria-hidden /> Attach quiz question
+                      </button>
+                      <p className="text-xs text-slate-500">Add more questions to the same lesson by submitting again.</p>
+                    </form>
+
+                    <div className="space-y-2 text-sm text-slate-700">
+                      <h3 className="text-base font-semibold text-slate-900">Quiz preview</h3>
+                      {learningTracks.map((track) => (
+                        <div key={track.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand">
+                            <span>
+                              {track.subject} · Grade {track.gradeLevel}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">
+                              {track.quizQuestions?.length || 0} questions
+                            </span>
+                          </div>
+                          {track.quizQuestions?.length ? (
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
+                              {track.quizQuestions.map((question) => (
+                                <li key={question.id} className="text-sm">
+                                  {question.prompt}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="mt-1 text-xs text-slate-500">No questions yet.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
