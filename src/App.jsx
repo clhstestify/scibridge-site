@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import SubjectsPage from './pages/SubjectsPage';
 import SubjectDetailPage from './pages/SubjectDetailPage';
 import LessonPage from './pages/LessonPage';
+import ChapterPage from './pages/ChapterPage';
 import QuizzesPage from './pages/QuizzesPage';
 import ResourcesPage from './pages/ResourcesPage';
 import AboutPage from './pages/AboutPage';
@@ -77,7 +78,11 @@ const App = () => {
           />
           <Route
             path="/subjects/:subjectId"
-            element={<SubjectDetailPage progress={progress} onComplete={markCompleted} />}
+            element={<SubjectDetailPage />}
+          />
+          <Route
+            path="/subjects/:subjectId/grades/:gradeLevel/chapters/:chapterId"
+            element={<ChapterPage />}
           />
           <Route
             path="/subjects/:subjectId/lessons/:lessonId"

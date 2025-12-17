@@ -7,7 +7,8 @@ const defaultTracks = [
     id: 'efs-grade-10',
     subject: 'English for Science',
     gradeLevel: '10',
-    summary: 'Bấm vào khối 10 để xem 7 chapter do admin thêm. Chọn Chapter 4 rồi mở Lesson 7 để thấy 3 mục VOCAB/PRACTICE/DIALOGUE.',
+    summary:
+      'Bấm vào khối 10 để xem 7 chapter do admin thêm. Chọn Chapter 4 rồi mở Lesson 7 để thấy 3 mục VOCABULARY/QUIZZES/DIALOGUE.',
     heroImage:
       'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
     documentUrl: '',
@@ -29,11 +30,11 @@ const defaultTracks = [
             id: `efs-10-ch-${chapterNumber}-lesson-${lessonNumber}`,
             title: `Lesson ${lessonNumber}`,
             sections: {
-              vocab:
+              vocabulary:
                 lessonNumber === 7 && chapterNumber === 4
                   ? '10 thuật ngữ chính: beaker, observe, mixture, stir, measure, spill, safety goggles, reaction, timer, record.'
                   : 'Thêm từ vựng chính tại đây.',
-              practice:
+              quizzes:
                 lessonNumber === 7 && chapterNumber === 4
                   ? 'Viết 5 câu mô tả các bước của thí nghiệm pha dung dịch muối. Đọc to và thu âm lại.'
                   : 'Thêm bài tập/quiz hoặc hướng dẫn thực hành.',
@@ -48,6 +49,29 @@ const defaultTracks = [
     })
   }
 ];
+
+function normalizeSections(sections = {}) {
+  const normalized = {
+    vocabulary: '',
+    quizzes: '',
+    dialogue: '',
+    ...sections
+  };
+
+  if (!normalized.vocabulary && sections.vocab) {
+    normalized.vocabulary = sections.vocab;
+  }
+
+  if (!normalized.quizzes && sections.practice) {
+    normalized.quizzes = sections.practice;
+  }
+
+  if (!normalized.dialogue && sections.conversation) {
+    normalized.dialogue = sections.conversation;
+  }
+
+  return normalized;
+}
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -66,7 +90,7 @@ function normalizeTrack(track) {
       lessons: [],
       ...chapter,
       lessons: (chapter.lessons || []).map((lesson) => ({
-        sections: { vocab: '', practice: '', dialogue: '', ...(lesson.sections || {}) },
+        sections: normalizeSections(lesson.sections),
         ...lesson
       }))
     }));
@@ -81,11 +105,11 @@ function normalizeTrack(track) {
           {
             id: `${base.id}-lesson-1`,
             title: base.chapter,
-            sections: {
-              vocab: base.summary || 'Admin có thể cập nhật từ vựng tại đây.',
-              practice: base.documentUrl ? `Mở tài liệu: ${base.documentUrl}` : 'Thêm bài tập tại đây.',
+            sections: normalizeSections({
+              vocabulary: base.summary || 'Admin có thể cập nhật từ vựng tại đây.',
+              quizzes: base.documentUrl ? `Mở tài liệu: ${base.documentUrl}` : 'Thêm bài tập tại đây.',
               dialogue: base.youtubeUrl ? `Xem video: ${base.youtubeUrl}` : 'Thêm hội thoại tại đây.'
-            }
+            })
           }
         ]
       }
@@ -156,7 +180,7 @@ export function addLesson(trackId, chapterId, lesson) {
         lessons: [
           {
             id: uuid(),
-            sections: { vocab: '', practice: '', dialogue: '', ...(lesson.sections || {}) },
+            sections: normalizeSections(lesson.sections),
             ...lesson
           },
           ...lessons
