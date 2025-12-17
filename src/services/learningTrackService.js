@@ -4,69 +4,108 @@ const STORAGE_KEY = 'scibridge-learning-tracks';
 
 const defaultTracks = [
   {
-    id: 'math-10-ch1',
-    subject: 'Mathematics',
+    id: 'efs-grade-10',
+    subject: 'English for Science',
     gradeLevel: '10',
-    chapter: 'Chapter 1: Algebra foundations',
-    summary: 'Warm-up problems, vocabulary, and a short practice quiz to guide learners into Grade 10 algebra.',
+    summary: 'Bấm vào khối 10 để xem 7 chapter do admin thêm. Chọn Chapter 4 rồi mở Lesson 7 để thấy 3 mục VOCAB/PRACTICE/DIALOGUE.',
     heroImage:
-      'https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1200&q=80',
-    documentUrl: 'https://example.com/math-grade10.pdf',
-    youtubeUrl: 'https://www.youtube.com/watch?v=fNX7cIX0cT0',
-    quizQuestions: [
-      {
-        id: 'math-10-q1',
-        prompt: 'Solve: 2(x + 3) = 14',
-        options: ['x = 4', 'x = 7', 'x = 5', 'x = 2'],
-        correctIndex: 2
-      }
-    ]
-  },
-  {
-    id: 'physics-11-ch2',
-    subject: 'Physics',
-    gradeLevel: '11',
-    chapter: 'Chapter 2: Waves & sound',
-    summary: 'Notebook-friendly diagrams, pronunciation tips, and a YouTube animation explain wavelength, amplitude, and frequency.',
-    heroImage:
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-    documentUrl: 'https://example.com/physics-waves.docx',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dlC1tW4j8Mk',
-    quizQuestions: [
-      {
-        id: 'physics-11-q1',
-        prompt: 'Which statement is correct for sound waves?',
-        options: ['They are transverse waves', 'They do not need a medium', 'They are longitudinal waves', 'They travel fastest in gas'],
-        correctIndex: 2
-      }
-    ]
-  },
-  {
-    id: 'chemistry-12-ch3',
-    subject: 'Chemistry',
-    gradeLevel: '12',
-    chapter: 'Chapter 3: Organic reactions',
-    summary: 'Step-by-step reaction maps plus a downloadable worksheet for Grade 12 revision.',
-    heroImage:
-      'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80',
-    documentUrl: 'https://example.com/organic-reactions.pdf',
+      'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
+    documentUrl: '',
     youtubeUrl: '',
-    quizQuestions: []
+    quizQuestions: [],
+    chapters: Array.from({ length: 7 }).map((_, index) => {
+      const chapterNumber = index + 1;
+      const lessonCount = chapterNumber === 4 ? 8 : 2;
+      return {
+        id: `efs-10-ch-${chapterNumber}`,
+        title: `Chapter ${chapterNumber}`,
+        description:
+          chapterNumber === 4
+            ? 'Từ vựng và bài luyện nghe/nói tập trung vào thí nghiệm hóa học đơn giản.'
+            : 'Nội dung mẫu để admin chỉnh sửa hoặc thay thế.',
+        lessons: Array.from({ length: lessonCount }).map((__, lessonIndex) => {
+          const lessonNumber = lessonIndex + 1;
+          return {
+            id: `efs-10-ch-${chapterNumber}-lesson-${lessonNumber}`,
+            title: `Lesson ${lessonNumber}`,
+            sections: {
+              vocab:
+                lessonNumber === 7 && chapterNumber === 4
+                  ? '10 thuật ngữ chính: beaker, observe, mixture, stir, measure, spill, safety goggles, reaction, timer, record.'
+                  : 'Thêm từ vựng chính tại đây.',
+              practice:
+                lessonNumber === 7 && chapterNumber === 4
+                  ? 'Viết 5 câu mô tả các bước của thí nghiệm pha dung dịch muối. Đọc to và thu âm lại.'
+                  : 'Thêm bài tập/quiz hoặc hướng dẫn thực hành.',
+              dialogue:
+                lessonNumber === 7 && chapterNumber === 4
+                  ? 'A: “Which tool do we need?” B: “The beaker and the timer so we can record the reaction.”'
+                  : 'Viết đoạn hội thoại ngắn để luyện nói.'
+            }
+          };
+        })
+      };
+    })
   }
 ];
 
 const isBrowser = typeof window !== 'undefined';
 
+function normalizeTrack(track) {
+  const base = {
+    quizQuestions: [],
+    heroImage: '',
+    documentUrl: '',
+    youtubeUrl: '',
+    chapters: [],
+    ...track
+  };
+
+  if (base.chapters?.length) {
+    base.chapters = base.chapters.map((chapter) => ({
+      lessons: [],
+      ...chapter,
+      lessons: (chapter.lessons || []).map((lesson) => ({
+        sections: { vocab: '', practice: '', dialogue: '', ...(lesson.sections || {}) },
+        ...lesson
+      }))
+    }));
+  } else if (base.chapter) {
+    // Backward compatibility: old single-chapter tracks become one chapter with one lesson
+    base.chapters = [
+      {
+        id: `${base.id}-chapter`,
+        title: base.chapter,
+        description: base.summary,
+        lessons: [
+          {
+            id: `${base.id}-lesson-1`,
+            title: base.chapter,
+            sections: {
+              vocab: base.summary || 'Admin có thể cập nhật từ vựng tại đây.',
+              practice: base.documentUrl ? `Mở tài liệu: ${base.documentUrl}` : 'Thêm bài tập tại đây.',
+              dialogue: base.youtubeUrl ? `Xem video: ${base.youtubeUrl}` : 'Thêm hội thoại tại đây.'
+            }
+          }
+        ]
+      }
+    ];
+  }
+
+  return base;
+}
+
 function readFromStorage() {
-  if (!isBrowser) return defaultTracks;
+  if (!isBrowser) return defaultTracks.map(normalizeTrack);
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) return defaultTracks;
+    if (!stored) return defaultTracks.map(normalizeTrack);
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : defaultTracks;
+    if (!Array.isArray(parsed)) return defaultTracks.map(normalizeTrack);
+    return parsed.map(normalizeTrack);
   } catch (error) {
     console.error('Unable to read learning tracks', error);
-    return defaultTracks;
+    return defaultTracks.map(normalizeTrack);
   }
 }
 
@@ -85,10 +124,52 @@ export function getLearningTracks() {
 
 export function addLearningTrack(entry) {
   const tracks = readFromStorage();
-  const newTrack = { id: uuid(), quizQuestions: [], ...entry };
+  const newTrack = normalizeTrack({ id: uuid(), ...entry });
   const updated = [newTrack, ...tracks];
   persist(updated);
   return newTrack;
+}
+
+export function addChapter(trackId, chapter) {
+  const tracks = readFromStorage();
+  const updated = tracks.map((track) => {
+    if (track.id !== trackId) return track;
+    const chapters = Array.isArray(track.chapters) ? track.chapters : [];
+    return {
+      ...track,
+      chapters: [{ id: uuid(), lessons: [], ...chapter }, ...chapters]
+    };
+  });
+  persist(updated);
+  return updated.find((track) => track.id === trackId);
+}
+
+export function addLesson(trackId, chapterId, lesson) {
+  const tracks = readFromStorage();
+  const updated = tracks.map((track) => {
+    if (track.id !== trackId) return track;
+    const chapters = (track.chapters || []).map((chapter) => {
+      if (chapter.id !== chapterId) return chapter;
+      const lessons = Array.isArray(chapter.lessons) ? chapter.lessons : [];
+      return {
+        ...chapter,
+        lessons: [
+          {
+            id: uuid(),
+            sections: { vocab: '', practice: '', dialogue: '', ...(lesson.sections || {}) },
+            ...lesson
+          },
+          ...lessons
+        ]
+      };
+    });
+
+    return { ...track, chapters };
+  });
+  persist(updated);
+  return updated
+    .find((track) => track.id === trackId)
+    ?.chapters.find((chapter) => chapter.id === chapterId);
 }
 
 export function addQuizQuestion(trackId, question) {
