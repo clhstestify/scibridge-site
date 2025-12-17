@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FiBookOpen, FiLayers, FiList, FiPlayCircle } from 'react-icons/fi';
+import LessonCard from '../components/LessonCard';
 import { subjects } from '../data/lessons';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { getLearningTracks } from '../services/learningTrackService.js';
 
-const SubjectDetailPage = () => {
+const SubjectDetailPage = ({ progress, onComplete }) => {
   const { subjectId } = useParams();
   const { t } = useLanguage();
   const [tracks, setTracks] = useState([]);
@@ -28,11 +29,6 @@ const SubjectDetailPage = () => {
     setSelectedChapterId(null);
     setSelectedLessonId(null);
   }, [subjectId]);
-
-  useEffect(() => {
-    setSelectedChapterId(null);
-    setSelectedLessonId(null);
-  }, [selectedGrade]);
 
   const subjectTracks = useMemo(() => {
     if (!subject) return [];
@@ -211,8 +207,7 @@ const SubjectDetailPage = () => {
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">{lesson.title}</p>
                     <p className="mt-1 text-sm text-slate-700 line-clamp-3">
-                      {lesson.sections?.vocabulary ||
-                        t('subjectsPage.lessonPlaceholder', 'Admin thêm nội dung ở VOCABULARY/QUIZZES/DIALOGUE')}
+                      {lesson.sections?.vocab || t('subjectsPage.lessonPlaceholder', 'Admin thêm nội dung ở VOCAB/PRACTICE/DIALOGUE')}
                     </p>
                   </button>
                 ))}
@@ -221,12 +216,12 @@ const SubjectDetailPage = () => {
               {activeLesson && (
                 <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">VOCABULARY</p>
-                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.vocabulary || '-'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">VOCAB</p>
+                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.vocab || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">QUIZZES</p>
-                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.quizzes || '-'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">PRACTICE</p>
+                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.practice || '-'}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">DIALOGUE</p>
@@ -245,62 +240,21 @@ const SubjectDetailPage = () => {
         )}
       </section>
 
-      <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_25px_60px_-45px_rgba(15,23,42,0.3)]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/80">
-              {t('subjectsPage.lessonCollection', 'Lesson collection')}
-            </p>
-            <h2 className="text-xl font-display font-semibold text-slate-900">
-              {t('subjectsPage.chapterCollectionHeading', 'Chọn chapter trong khối {grade}', {
-                grade: selectedGrade
-              })}
-            </h2>
-            <p className="text-sm text-slate-700">
-                {t(
-                  'subjectsPage.chapterCollectionHint',
-                  'Bấm vào chapter của khối để mở trang mới với đầy đủ VOCABULARY/QUIZZES/DIALOGUE cho tất cả lesson.'
-                )}
-            </p>
-          </div>
-          <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
-            {t('subjectsPage.gradeLabel', 'Grade {grade}', { grade: selectedGrade })}
-          </span>
+      <section className="space-y-6">
+        <h2 className="text-2xl font-display font-semibold text-slate-900">
+          {t('subjectsPage.lessonCollection', 'Lesson collection')}
+        </h2>
+        <div className="space-y-6">
+          {subject.lessons.map((lesson) => (
+            <LessonCard
+              key={lesson.id}
+              lesson={lesson}
+              subjectId={subject.id}
+              isCompleted={Boolean(progress[lesson.id])}
+              onComplete={onComplete}
+            />
+          ))}
         </div>
-
-        {!gradeTracks.length && (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            {t('subjectsPage.noChapters', 'Chưa có chapter cho khối này. Admin hãy thêm bài trong trang quản trị để hiển thị tại đây.')}
-          </p>
-        )}
-
-        {!!gradeTracks.length && (
-          <div className="grid gap-4 md:grid-cols-2">
-            {chapters.map((chapter) => (
-              <Link
-                key={chapter.id}
-                to={`/subjects/${subject.id}/grades/${selectedGrade}/chapters/${chapter.id}`}
-                className="group flex flex-col gap-3 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_20px_45px_-30px_rgba(56,189,248,0.5)]"
-              >
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand">
-                  <FiLayers aria-hidden />
-                  <span>{chapter.title}</span>
-                </div>
-                {chapter.description && <p className="text-sm text-slate-700 line-clamp-3">{chapter.description}</p>}
-                <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
-                  <span className="rounded-full bg-slate-100 px-3 py-1">
-                    {t('subjectsPage.lessonCount', '{count} lesson', {
-                      count: chapter.lessons?.length || 0
-                    })}
-                  </span>
-                  <span className="text-brand group-hover:text-brand-dark">
-                    {t('subjectsPage.viewChapter', 'Mở trang chapter →')}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );

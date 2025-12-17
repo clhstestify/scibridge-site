@@ -44,7 +44,7 @@ const defaultTrackForm = {
   youtubeUrl: ''
 };
 const defaultChapterForm = { trackId: '', title: '', description: '' };
-const defaultLessonForm = { trackId: '', chapterId: '', title: '', vocabulary: '', quizzes: '', dialogue: '' };
+const defaultLessonForm = { trackId: '', chapterId: '', title: '', vocab: '', practice: '', dialogue: '' };
 const defaultQuizDraft = { trackId: '', prompt: '', options: ['', '', '', ''], correctIndex: 0 };
 
 const sectionIds = {
@@ -366,7 +366,7 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       addChapter(chapterForm.trackId, { title: chapterForm.title, description: chapterForm.description });
       setLearningTracks(getLearningTracks());
       setChapterForm((previous) => ({ ...previous, title: '', description: '' }));
-      handleSuccess('Đã thêm chapter mới. Hãy thêm lesson và nội dung cho VOCABULARY/QUIZZES/DIALOGUE.');
+      handleSuccess('Đã thêm chapter mới. Hãy thêm lesson và nội dung để hiển thị VOCAB/PRACTICE/DIALOGUE.');
     } catch (error) {
       handleError(error.message);
     } finally {
@@ -385,14 +385,14 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       addLesson(lessonForm.trackId, lessonForm.chapterId, {
         title: lessonForm.title,
         sections: {
-          vocabulary: lessonForm.vocabulary,
-          quizzes: lessonForm.quizzes,
+          vocab: lessonForm.vocab,
+          practice: lessonForm.practice,
           dialogue: lessonForm.dialogue
         }
       });
       setLearningTracks(getLearningTracks());
-      setLessonForm((previous) => ({ ...previous, title: '', vocabulary: '', quizzes: '', dialogue: '' }));
-      handleSuccess('Đã lưu lesson với 3 mục VOCABULARY/QUIZZES/DIALOGUE.');
+      setLessonForm((previous) => ({ ...previous, title: '', vocab: '', practice: '', dialogue: '' }));
+      handleSuccess('Đã lưu lesson với 3 mục VOCAB/PRACTICE/DIALOGUE.');
     } catch (error) {
       handleError(error.message);
     } finally {
@@ -1132,21 +1132,21 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                     </label>
                     <div className="grid gap-3 md:grid-cols-3">
                       <label className="grid gap-1 text-sm text-slate-700">
-                        VOCABULARY
+                        VOCAB
                         <textarea
-                          value={lessonForm.vocabulary}
-                          onChange={(event) => setLessonForm((previous) => ({ ...previous, vocabulary: event.target.value }))}
+                          value={lessonForm.vocab}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, vocab: event.target.value }))}
                           className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
                           placeholder="Danh sách từ vựng"
                         />
                       </label>
                       <label className="grid gap-1 text-sm text-slate-700">
-                        QUIZZES
+                        PRACTICE
                         <textarea
-                          value={lessonForm.quizzes}
-                          onChange={(event) => setLessonForm((previous) => ({ ...previous, quizzes: event.target.value }))}
+                          value={lessonForm.practice}
+                          onChange={(event) => setLessonForm((previous) => ({ ...previous, practice: event.target.value }))}
                           className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                          placeholder="Bài tập/quiz hoặc hướng dẫn luyện tập"
+                          placeholder="Bài tập/quiz"
                         />
                       </label>
                       <label className="grid gap-1 text-sm text-slate-700">
