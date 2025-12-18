@@ -271,6 +271,23 @@ export function addQuizQuestion(trackId, question) {
   return updated.find((track) => track.id === trackId);
 }
 
+export function removeLesson(trackId, chapterId, lessonId) {
+  const tracks = readFromStorage();
+  const updated = tracks.map((track) => {
+    if (track.id !== trackId) return track;
+    const chapters = (track.chapters || []).map((chapter) => {
+      if (chapter.id !== chapterId) return chapter;
+      return {
+        ...chapter,
+        lessons: (chapter.lessons || []).filter((lesson) => lesson.id !== lessonId)
+      };
+    });
+    return { ...track, chapters };
+  });
+  persist(updated);
+  return updated;
+}
+
 export function clearLearningTracks() {
   if (!isBrowser) return;
   window.localStorage.removeItem(STORAGE_KEY);

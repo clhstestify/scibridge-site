@@ -26,7 +26,8 @@ import {
   addLearningTrack,
   addLesson,
   addQuizQuestion,
-  getLearningTracks
+  getLearningTracks,
+  removeLesson
 } from '../services/learningTrackService.js';
 import WPAdminToolbar from '../components/WPAdminToolbar.jsx';
 
@@ -498,6 +499,23 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       );
       setQuizDraft({ ...defaultQuizDraft, trackId: updatedTrack.id });
       handleSuccess('Quiz question added to this lesson.');
+    } catch (error) {
+      handleError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLessonDelete = (trackId, chapterId, lessonId) => {
+    if (!trackId || !chapterId || !lessonId) {
+      handleError('Không thể xóa lesson vì thiếu thông tin khối hoặc chapter.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const updatedTracks = removeLesson(trackId, chapterId, lessonId);
+      setLearningTracks(updatedTracks);
+      handleSuccess('Đã xóa lesson khỏi chapter.');
     } catch (error) {
       handleError(error.message);
     } finally {
@@ -1362,8 +1380,19 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                                 </div>
                                 <ul className="mt-1 space-y-1 text-xs text-slate-700">
                                   {(chapter.lessons || []).map((lesson) => (
-                                    <li key={lesson.id} className="rounded bg-slate-50 px-2 py-1">
-                                      <span className="font-semibold text-brand">{lesson.title}</span> · VOCAB | PRACTICE | DIALOGUE
+                                    <li key={lesson.id} className="flex items-center justify-between gap-2 rounded bg-slate-50 px-2 py-1">
+                                      <div className="space-y-0.5">
+                                        <p className="font-semibold text-brand">{lesson.title}</p>
+                                        <p>VOCAB | PRACTICE | DIALOGUE</p>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleLessonDelete(track.id, chapter.id, lesson.id)}
+                                        className="inline-flex items-center justify-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                        disabled={isSubmitting}
+                                      >
+                                        Xóa lesson
+                                      </button>
                                     </li>
                                   ))}
                                 </ul>
