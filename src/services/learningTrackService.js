@@ -1,6 +1,5 @@
-import { v4 as uuid } from 'uuid';
-
-const STORAGE_KEY = 'scibridge-learning-tracks';
+import { API_BASE_URL } from './authService';
+import { defaultLearningTracks } from '../../shared/learningTrackDefaults.js';
 
 function normalizeDialogue(dialogue = '') {
   if (typeof dialogue === 'string') {
@@ -20,7 +19,6 @@ function normalizeDialogue(dialogue = '') {
 }
 
 function normalizeVocabulary(vocabulary = '') {
-  // Accept legacy string content or new structured items
   if (typeof vocabulary === 'string') {
     return { items: [], note: vocabulary };
   }
@@ -43,74 +41,6 @@ function normalizeVocabulary(vocabulary = '') {
 
   return { items: [], note: '' };
 }
-
-const defaultTracks = [
-  {
-    id: 'efs-grade-10',
-    subject: 'English for Science',
-    gradeLevel: '10',
-    summary:
-      'Bấm vào khối 10 để xem 7 chapter do admin thêm. Chọn Chapter 4 rồi mở Lesson 7 để thấy 3 mục VOCABULARY/QUIZZES/DIALOGUE.',
-    heroImage:
-      'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80',
-    documentUrl: '',
-    youtubeUrl: '',
-    quizQuestions: [],
-    chapters: Array.from({ length: 7 }).map((_, index) => {
-      const chapterNumber = index + 1;
-      const lessonCount = chapterNumber === 4 ? 8 : 2;
-      return {
-        id: `efs-10-ch-${chapterNumber}`,
-        title: `Chapter ${chapterNumber}`,
-        description:
-          chapterNumber === 4
-            ? 'Từ vựng và bài luyện nghe/nói tập trung vào thí nghiệm hóa học đơn giản.'
-            : 'Nội dung mẫu để admin chỉnh sửa hoặc thay thế.',
-        lessons: Array.from({ length: lessonCount }).map((__, lessonIndex) => {
-          const lessonNumber = lessonIndex + 1;
-          return {
-            id: `efs-10-ch-${chapterNumber}-lesson-${lessonNumber}`,
-            title: `Lesson ${lessonNumber}`,
-            sections: {
-              vocabulary:
-                lessonNumber === 7 && chapterNumber === 4
-                  ? {
-                      items: [
-                        {
-                          term: 'beaker',
-                          translation: 'cốc đong thủy tinh',
-                          audioFileName: 'sample-beaker.mp3'
-                        },
-                        {
-                          term: 'observe',
-                          translation: 'quan sát',
-                          audioFileName: 'sample-observe.mp3'
-                        }
-                      ],
-                      note: '10 thuật ngữ chính: beaker, observe, mixture, stir, measure, spill, safety goggles, reaction, timer, record.'
-                    }
-                  : { items: [], note: 'Thêm từ vựng chính tại đây.' },
-              quizzes:
-                lessonNumber === 7 && chapterNumber === 4
-                  ? 'Viết 5 câu mô tả các bước của thí nghiệm pha dung dịch muối. Đọc to và thu âm lại.'
-                  : 'Thêm bài tập/quiz hoặc hướng dẫn thực hành.',
-              dialogue:
-                lessonNumber === 7 && chapterNumber === 4
-                  ? {
-                      english: 'A: “Which tool do we need?” B: “The beaker and the timer so we can record the reaction.”',
-                      vietnamese: 'A: “Chúng ta cần dụng cụ nào?” B: “Cốc đong và đồng hồ bấm giờ để ghi lại phản ứng.”'
-                    }
-                  : {
-                      english: 'Write a short practice dialogue for this lesson.',
-                      vietnamese: 'Viết đoạn hội thoại ngắn để luyện nói.'
-                    }
-            }
-          };
-        })
-      };
-    })
-  }
-];
 
 function normalizeSections(sections = {}) {
   const normalized = {
@@ -137,8 +67,6 @@ function normalizeSections(sections = {}) {
   return normalized;
 }
 
-const isBrowser = typeof window !== 'undefined';
-
 function normalizeTrack(track) {
   const base = {
     quizQuestions: [],
@@ -159,7 +87,6 @@ function normalizeTrack(track) {
       }))
     }));
   } else if (base.chapter) {
-    // Backward compatibility: old single-chapter tracks become one chapter with one lesson
     base.chapters = [
       {
         id: `${base.id}-chapter`,
@@ -183,95 +110,83 @@ function normalizeTrack(track) {
   return base;
 }
 
-function readFromStorage() {
-  if (!isBrowser) return defaultTracks.map(normalizeTrack);
+function buildHeaders(user, additionalHeaders = {}) {
+  if (!user?.username) {
+    throw new Error('Signed-in user information is required for this request.');
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'x-user-username': user.username.toLowerCase(),
+    ...additionalHeaders
+  };
+}
+
+async function handleResponse(response) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || 'Request failed');
+  }
+  return payload;
+}
+
+export function getDefaultLearningTracks() {
+  return defaultLearningTracks.map((entry) => normalizeTrack({ ...entry }));
+}
+
+export async function getLearningTracks() {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) return defaultTracks.map(normalizeTrack);
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return defaultTracks.map(normalizeTrack);
-    return parsed.map(normalizeTrack);
+    const response = await fetch(`${API_BASE_URL}/api/learning-tracks`);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.message || 'Unable to load learning tracks.');
+    }
+    if (!Array.isArray(payload.tracks)) {
+      return getDefaultLearningTracks();
+    }
+    return payload.tracks.map(normalizeTrack);
   } catch (error) {
-    console.error('Unable to read learning tracks', error);
-    return defaultTracks.map(normalizeTrack);
+    console.error('Unable to load learning tracks', error);
+    return getDefaultLearningTracks();
   }
 }
 
-function persist(tracks) {
-  if (!isBrowser) return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tracks));
-  } catch (error) {
-    console.error('Unable to save learning tracks', error);
-  }
-}
-
-export function getLearningTracks() {
-  return readFromStorage();
-}
-
-export function addLearningTrack(entry) {
-  const tracks = readFromStorage();
-  const newTrack = normalizeTrack({ id: uuid(), ...entry });
-  const updated = [newTrack, ...tracks];
-  persist(updated);
-  return newTrack;
-}
-
-export function addChapter(trackId, chapter) {
-  const tracks = readFromStorage();
-  const updated = tracks.map((track) => {
-    if (track.id !== trackId) return track;
-    const chapters = Array.isArray(track.chapters) ? track.chapters : [];
-    return {
-      ...track,
-      chapters: [{ id: uuid(), lessons: [], ...chapter }, ...chapters]
-    };
+export async function addLearningTrack(user, entry) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/learning-tracks`, {
+    method: 'POST',
+    headers: buildHeaders(user),
+    body: JSON.stringify(entry)
   });
-  persist(updated);
-  return updated.find((track) => track.id === trackId);
+  const payload = await handleResponse(response);
+  return normalizeTrack(payload.track);
 }
 
-export function addLesson(trackId, chapterId, lesson) {
-  const tracks = readFromStorage();
-  const updated = tracks.map((track) => {
-    if (track.id !== trackId) return track;
-    const chapters = (track.chapters || []).map((chapter) => {
-      if (chapter.id !== chapterId) return chapter;
-      const lessons = Array.isArray(chapter.lessons) ? chapter.lessons : [];
-      return {
-        ...chapter,
-        lessons: [
-          {
-            id: uuid(),
-            sections: normalizeSections(lesson.sections),
-            ...lesson
-          },
-          ...lessons
-        ]
-      };
-    });
-
-    return { ...track, chapters };
+export async function addChapter(user, trackId, chapter) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/learning-tracks/${trackId}/chapters`, {
+    method: 'POST',
+    headers: buildHeaders(user),
+    body: JSON.stringify(chapter)
   });
-  persist(updated);
-  return updated
-    .find((track) => track.id === trackId)
-    ?.chapters.find((chapter) => chapter.id === chapterId);
+  const payload = await handleResponse(response);
+  return { track: normalizeTrack(payload.track), chapter: payload.chapter };
 }
 
-export function addQuizQuestion(trackId, question) {
-  const tracks = readFromStorage();
-  const updated = tracks.map((track) => {
-    if (track.id !== trackId) return track;
-    const quizQuestions = Array.isArray(track.quizQuestions) ? track.quizQuestions : [];
-    return { ...track, quizQuestions: [...quizQuestions, { id: uuid(), ...question }] };
+export async function addLesson(user, trackId, chapterId, lesson) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/learning-tracks/${trackId}/chapters/${chapterId}/lessons`, {
+    method: 'POST',
+    headers: buildHeaders(user),
+    body: JSON.stringify(lesson)
   });
-  persist(updated);
-  return updated.find((track) => track.id === trackId);
+  const payload = await handleResponse(response);
+  return { track: normalizeTrack(payload.track), chapter: payload.chapter, lesson: payload.lesson };
 }
 
-export function clearLearningTracks() {
-  if (!isBrowser) return;
-  window.localStorage.removeItem(STORAGE_KEY);
+export async function addQuizQuestion(user, trackId, question) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/learning-tracks/${trackId}/quizzes`, {
+    method: 'POST',
+    headers: buildHeaders(user),
+    body: JSON.stringify(question)
+  });
+  const payload = await handleResponse(response);
+  return { track: normalizeTrack(payload.track) };
 }

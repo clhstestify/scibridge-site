@@ -20,7 +20,15 @@ const HomePage = () => {
   const [tracks, setTracks] = useState([]);
 
   useEffect(() => {
-    setTracks(getLearningTracks());
+    let isMounted = true;
+    getLearningTracks().then((data) => {
+      if (!isMounted) return;
+      setTracks(data);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
