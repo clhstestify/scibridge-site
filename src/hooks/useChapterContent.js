@@ -1,9 +1,21 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { subjects } from '../data/lessons';
 import { getLearningTracks } from '../services/learningTrackService';
 
 export const useChapterContent = (subjectId, gradeLevel, chapterId) => {
-  const tracks = useMemo(() => getLearningTracks(), []);
+  const [tracks, setTracks] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getLearningTracks().then((data) => {
+      if (!isMounted) return;
+      setTracks(data);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const subject = useMemo(() => subjects.find((item) => item.id === subjectId), [subjectId]);
 
