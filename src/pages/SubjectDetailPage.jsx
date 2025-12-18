@@ -22,15 +22,7 @@ const SubjectDetailPage = () => {
     : '';
 
   useEffect(() => {
-    let isMounted = true;
-    getLearningTracks().then((data) => {
-      if (!isMounted) return;
-      setTracks(data);
-    });
-
-    return () => {
-      isMounted = false;
-    };
+    setTracks(getLearningTracks());
   }, []);
 
   useEffect(() => {
