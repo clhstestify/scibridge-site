@@ -1,38 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FiBookOpen, FiCheckCircle, FiFolder, FiLayers, FiMessageSquare, FiXCircle } from 'react-icons/fi';
-import { subjects } from '../data/lessons';
-import { getLearningTracks } from '../services/learningTrackService';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { useChapterContent } from '../hooks/useChapterContent.js';
+import { normalizeDialogue, normalizeVocabulary } from '../utils/sectionContent.js';
 
 const ChapterPage = () => {
   const { subjectId, gradeLevel, chapterId } = useParams();
   const { t } = useLanguage();
-  const audioBaseUrl = (import.meta.env.VITE_AUDIO_BASE_URL || '/uploads').replace(/\/$/, '');
+  const { subject, track, chapter, quizQuestions } = useChapterContent(subjectId, gradeLevel, chapterId);
 
-  const subject = useMemo(() => subjects.find((item) => item.id === subjectId), [subjectId]);
-  const tracks = useMemo(() => getLearningTracks(), []);
-
-  const track = useMemo(() => {
-    if (!subject) return null;
-    const normalizedTitle = subject.title.toLowerCase();
-    return tracks.find((entry) => {
-      const trackSubject = (entry.subject || '').toLowerCase();
-      return (
-        entry.gradeLevel === gradeLevel &&
-        (trackSubject === normalizedTitle ||
-          normalizedTitle.includes(trackSubject) ||
-          trackSubject.includes(normalizedTitle))
-      );
-    });
-  }, [gradeLevel, subject, tracks]);
-
-  const chapter = useMemo(
-    () => track?.chapters?.find((item) => item.id === chapterId),
-    [chapterId, track?.chapters]
-  );
-
-  const quizQuestions = track?.quizQuestions || [];
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
@@ -44,34 +21,6 @@ const ChapterPage = () => {
   }, [track?.id]);
 
   const subjectTitle = t(['subjects', subject?.id, 'title'], subject?.title || '');
-
-  const normalizeDialogue = (dialogue) => {
-    if (typeof dialogue === 'string') {
-      return { english: dialogue, vietnamese: '' };
-    }
-
-    return {
-      english: dialogue?.english || dialogue?.en || '',
-      vietnamese: dialogue?.vietnamese || dialogue?.vi || ''
-    };
-  };
-
-  const normalizeVocabulary = (vocabulary) => {
-    if (!vocabulary) return { items: [], note: '' };
-    if (typeof vocabulary === 'string') return { items: [], note: vocabulary };
-    if (Array.isArray(vocabulary)) return { items: vocabulary, note: '' };
-    if (typeof vocabulary === 'object') {
-      const items = Array.isArray(vocabulary.items) ? vocabulary.items : [];
-      return { items, note: vocabulary.note || '' };
-    }
-    return { items: [], note: '' };
-  };
-
-  const getAudioSrc = (fileName) => {
-    if (!fileName) return '';
-    return `${audioBaseUrl}/${fileName}`;
-  };
-
   const currentQuestion = quizQuestions[activeQuestionIndex];
 
   const handleOptionClick = (index) => {
@@ -86,6 +35,57 @@ const ChapterPage = () => {
       if (!quizQuestions.length) return 0;
       return (previous + 1) % quizQuestions.length;
     });
+  };
+
+  const sections = useMemo(
+    () => [
+      {
+        key: 'vocabulary',
+        label: 'Vocabulary',
+        description: t(
+          'chapterPage.vocabularyDescription',
+          'Thu thập từ vựng và cụm từ quan trọng cho chapter này do admin cung cấp.'
+        ),
+        icon: FiBookOpen
+      },
+      {
+        key: 'quizzes',
+        label: 'Quizzes',
+        description: t(
+          'chapterPage.quizzesDescription',
+          'Bài luyện tập, câu hỏi ôn tập hoặc quiz mà admin thêm cho từng lesson.'
+        ),
+        icon: FiCheckCircle
+      },
+      {
+        key: 'dialogue',
+        label: 'Dialogue',
+        description: t(
+          'chapterPage.dialogueDescription',
+          'Đoạn hội thoại luyện nói hoặc kịch bản tình huống song ngữ cho chapter.'
+        ),
+        icon: FiMessageSquare
+      }
+    ],
+    [t]
+  );
+
+  const getSectionStats = (key) => {
+    const lessons = chapter?.lessons || [];
+    const filledLessons = lessons.filter((lesson) => {
+      const content = lesson.sections?.[key];
+      if (key === 'vocabulary') {
+        const vocabulary = normalizeVocabulary(content);
+        return vocabulary.items.length > 0 || Boolean(vocabulary.note);
+      }
+      if (key === 'dialogue') {
+        const dialogue = normalizeDialogue(content);
+        return Boolean(dialogue.english) || Boolean(dialogue.vietnamese);
+      }
+      return Boolean(content);
+    }).length;
+
+    return { totalLessons: lessons.length, filledLessons };
   };
 
   if (!subject || !track || !chapter) {
@@ -140,148 +140,67 @@ const ChapterPage = () => {
 
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {[
-              {
-                key: 'vocabulary',
-                label: 'Vocabulary',
-                description: t(
-                  'chapterPage.vocabularyDescription',
-                  'Thu thập từ vựng và cụm từ quan trọng cho chapter này do admin cung cấp.'
-                ),
-                icon: FiBookOpen
-              },
-              {
-                key: 'quizzes',
-                label: 'Quizzes',
-                description: t(
-                  'chapterPage.quizzesDescription',
-                  'Bài luyện tập, câu hỏi ôn tập hoặc quiz mà admin thêm cho từng lesson.'
-                ),
-                icon: FiCheckCircle
-              },
-              {
-                key: 'dialogue',
-                label: 'Dialogue',
-                description: t(
-                  'chapterPage.dialogueDescription',
-                  'Đoạn hội thoại luyện nói hoặc kịch bản tình huống song ngữ cho chapter.'
-                ),
-                icon: FiMessageSquare
-              }
-            ].map(({ key, label, description, icon: Icon }) => (
-              <section key={key} className="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 rounded-full bg-brand/10 p-2 text-brand">
-                    <Icon aria-hidden />
-                  </span>
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">{label}</p>
-                    <p className="text-sm text-slate-700">{description}</p>
-                  </div>
-                </div>
+          <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+                  {t('chapterPage.sectionListEyebrow', 'Nội dung chapter')}
+                </p>
+                <h2 className="text-xl font-display font-semibold text-slate-900">
+                  {t('chapterPage.sectionListTitle', 'Chọn mục để xem nội dung chi tiết')}
+                </h2>
+                <p className="text-sm text-slate-700">
+                  {t(
+                    'chapterPage.sectionListDescription',
+                    'Mỗi chapter có 3 mục riêng biệt. Bấm vào để mở trang hiển thị đầy đủ Vocabulary, Quizzes hoặc Dialogue.'
+                  )}
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
+                {t('chapterPage.lessonCount', '{count} lessons', { count: chapter.lessons?.length || 0 })}
+              </span>
+            </div>
 
-                {!chapter.lessons?.length ? (
-                  <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {t('chapterPage.noLessons', 'Chapter này chưa có lesson. Admin hãy thêm bài để hiển thị nội dung đầy đủ.')}
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {chapter.lessons.map((lesson) => {
-                      const content = lesson.sections?.[key];
-                      const vocabulary = normalizeVocabulary(lesson.sections?.vocabulary);
-                      const dialogue = normalizeDialogue(content);
-                      const hasDialogue = dialogue.english || dialogue.vietnamese;
-
-                      return (
-                        <article
-                          key={`${key}-${lesson.id}`}
-                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.25)]"
-                        >
-                          <div className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <FiFolder className="text-brand" aria-hidden />
-                              <span>{lesson.title}</span>
-                            </div>
-                            {key === 'quizzes' && (
-                              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand">
-                                MCQ ready
-                              </span>
-                            )}
-                          </div>
-                          {key === 'dialogue' ? (
-                            hasDialogue ? (
-                              <div className="mt-3 space-y-2 text-sm text-slate-800">
-                                {dialogue.english && (
-                                  <div className="rounded-xl bg-white px-3 py-2">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">English</p>
-                                    <p className="mt-1 whitespace-pre-line">{dialogue.english}</p>
-                                  </div>
-                                )}
-                                {dialogue.vietnamese && (
-                                  <div className="rounded-xl bg-white px-3 py-2">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">Tiếng Việt</p>
-                                    <p className="mt-1 whitespace-pre-line">{dialogue.vietnamese}</p>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
-                                {t(
-                                  'chapterPage.sectionFallback',
-                                  'Admin chưa thêm nội dung cho mục này. Vui lòng cập nhật trong admin panel.'
-                                )}
-                              </p>
-                            )
-                          ) : key === 'vocabulary' ? (
-                            vocabulary.items.length ? (
-                              <div className="mt-3 space-y-2 text-sm text-slate-800">
-                                {vocabulary.items.map((item) => (
-                                  <div
-                                    key={`${lesson.id}-${item.term}`}
-                                    className="flex items-start justify-between gap-3 rounded-xl bg-white px-3 py-2"
-                                  >
-                                    <div>
-                                      <p className="text-sm font-semibold text-slate-900">{item.term}</p>
-                                      <p className="text-xs text-slate-700">{item.translation || t('chapterPage.noTranslation', 'Chưa có nghĩa')}</p>
-                                    </div>
-                                    {item.audioFileName && (
-                                      <audio controls className="w-28">
-                                        <source src={getAudioSrc(item.audioFileName)} type="audio/mpeg" />
-                                      </audio>
-                                    )}
-                                  </div>
-                                ))}
-                                {vocabulary.note && (
-                                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">{vocabulary.note}</p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
-                                {vocabulary.note ||
-                                  t(
-                                    'chapterPage.sectionFallback',
-                                    'Admin chưa thêm nội dung cho mục này. Vui lòng cập nhật trong admin panel.'
-                                  )}
-                              </p>
-                            )
-                          ) : (
-                            <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
-                              {content ||
-                                t(
-                                  'chapterPage.sectionFallback',
-                                  'Admin chưa thêm nội dung cho mục này. Vui lòng cập nhật trong admin panel.'
-                                )}
-                            </p>
-                          )}
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            ))}
-          </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {sections.map(({ key, label, description, icon: Icon }) => {
+                const stats = getSectionStats(key);
+                return (
+                  <article
+                    key={key}
+                    className="flex h-full flex-col justify-between space-y-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 rounded-full bg-brand/10 p-2 text-brand">
+                        <Icon aria-hidden />
+                      </span>
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-brand">{label}</p>
+                        <p className="text-sm text-slate-700">{description}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <span>
+                        {t('chapterPage.sectionProgress', '{filled}/{total} lessons có nội dung', {
+                          filled: stats.filledLessons,
+                          total: stats.totalLessons
+                        })}
+                      </span>
+                      <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 font-semibold text-brand">
+                        <FiFolder aria-hidden />
+                        <span>{label}</span>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/subjects/${subjectId}/grades/${gradeLevel}/chapters/${chapterId}/${key}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(56,189,248,0.35)] transition hover:bg-brand-dark"
+                    >
+                      {t('chapterPage.viewSection', 'Xem {label}', { label })}
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
         </div>
 
         <aside className="space-y-4">

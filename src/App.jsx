@@ -19,6 +19,7 @@ import FlashcardsPage from './pages/FlashcardsPage.jsx';
 import DictionaryPage from './pages/DictionaryPage.jsx';
 import ChatbotPage from './pages/ChatbotPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import ChapterSectionPage from './pages/ChapterSectionPage.jsx';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +84,10 @@ const App = () => {
           <Route
             path="/subjects/:subjectId/grades/:gradeLevel/chapters/:chapterId"
             element={<ChapterPage />}
+          />
+          <Route
+            path="/subjects/:subjectId/grades/:gradeLevel/chapters/:chapterId/:sectionKey"
+            element={<ChapterSectionPage />}
           />
           <Route
             path="/subjects/:subjectId/lessons/:lessonId"
