@@ -44,8 +44,18 @@ const defaultTrackForm = {
   youtubeUrl: ''
 };
 const defaultChapterForm = { trackId: '', title: '', description: '' };
-const defaultLessonForm = { trackId: '', chapterId: '', title: '', vocabulary: '', quizzes: '', dialogue: '' };
+const defaultLessonForm = {
+  trackId: '',
+  chapterId: '',
+  title: '',
+  vocabularyNote: '',
+  vocabularyItems: [],
+  quizzes: '',
+  dialogueEnglish: '',
+  dialogueVietnamese: ''
+};
 const defaultQuizDraft = { trackId: '', prompt: '', options: ['', '', '', ''], correctIndex: 0 };
+const defaultVocabularyDraft = { term: '', translation: '', audioFileName: '', file: null };
 
 const sectionIds = {
   wordpress: 'wordpress-admin-section',
@@ -168,11 +178,13 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
   const [chapterForm, setChapterForm] = useState(defaultChapterForm);
   const [lessonForm, setLessonForm] = useState(defaultLessonForm);
   const [quizDraft, setQuizDraft] = useState(defaultQuizDraft);
+  const [vocabularyDraft, setVocabularyDraft] = useState(defaultVocabularyDraft);
   const [learningTracks, setLearningTracks] = useState(() => getLearningTracks());
 
   const [roleDrafts, setRoleDrafts] = useState({});
   const [orgDrafts, setOrgDrafts] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vocabularyInputKey, setVocabularyInputKey] = useState(0);
 
   const subjectChoices = [
     'Mathematics',
@@ -237,7 +249,9 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
     setLessonForm((previous) => ({
       ...previous,
       trackId: previous.trackId || firstTrackId,
-      chapterId: previous.chapterId || learningTracks[0].chapters?.[0]?.id || ''
+      chapterId: previous.chapterId || learningTracks[0].chapters?.[0]?.id || '',
+      vocabularyItems: previous.vocabularyItems || [],
+      vocabularyNote: previous.vocabularyNote || ''
     }));
   }, [learningTracks]);
 
@@ -265,10 +279,41 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
     setSuccessMessage('');
   };
 
+  const addVocabularyItem = (entry) => {
+    const cleaned = {
+      term: entry.term?.trim() || '',
+      translation: entry.translation?.trim() || '',
+      audioFileName: resolveAudioFileName(entry)
+    };
+
+    if (!cleaned.term) {
+      handleError('Nhập từ vựng trước khi lưu.');
+      return false;
+    }
+
+    setLessonForm((previous) => ({
+      ...previous,
+      vocabularyItems: [...(previous.vocabularyItems || []), cleaned]
+    }));
+    setErrorMessage('');
+    setVocabularyDraft(defaultVocabularyDraft);
+    setVocabularyInputKey((value) => value + 1);
+    return true;
+  };
+
+  const removeVocabularyItem = (index) => {
+    setLessonForm((previous) => ({
+      ...previous,
+      vocabularyItems: (previous.vocabularyItems || []).filter((_, itemIndex) => itemIndex !== index)
+    }));
+  };
+
   const handleSuccess = (message) => {
     setSuccessMessage(message);
     setErrorMessage('');
   };
+
+  const resolveAudioFileName = (entry) => entry.file?.name || entry.audioFileName || '';
 
   const handleAnnouncementSubmit = async (event) => {
     event.preventDefault();
@@ -380,18 +425,37 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
       handleError('Chọn khối và chapter trước khi thêm lesson.');
       return;
     }
+
+    if (!lessonForm.vocabularyItems.length && !lessonForm.vocabularyNote.trim()) {
+      handleError('Thêm ít nhất 1 từ vựng hoặc ghi chú vocabulary.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       addLesson(lessonForm.trackId, lessonForm.chapterId, {
         title: lessonForm.title,
         sections: {
-          vocabulary: lessonForm.vocabulary,
+          vocabulary: {
+            items: lessonForm.vocabularyItems,
+            note: lessonForm.vocabularyNote
+          },
           quizzes: lessonForm.quizzes,
-          dialogue: lessonForm.dialogue
+          dialogue: {
+            english: lessonForm.dialogueEnglish,
+            vietnamese: lessonForm.dialogueVietnamese
+          }
         }
       });
       setLearningTracks(getLearningTracks());
-      setLessonForm((previous) => ({ ...previous, title: '', vocabulary: '', quizzes: '', dialogue: '' }));
+      setLessonForm((previous) => ({
+        ...previous,
+        title: '',
+        vocabularyNote: '',
+        vocabularyItems: [],
+        quizzes: '',
+        dialogueEnglish: '',
+        dialogueVietnamese: ''
+      }));
       handleSuccess('Đã lưu lesson với 3 mục VOCABULARY/QUIZZES/DIALOGUE.');
     } catch (error) {
       handleError(error.message);
@@ -1132,13 +1196,95 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                     </label>
                     <div className="grid gap-3 md:grid-cols-3">
                       <label className="grid gap-1 text-sm text-slate-700">
-                        VOCABULARY
-                        <textarea
-                          value={lessonForm.vocabulary}
-                          onChange={(event) => setLessonForm((previous) => ({ ...previous, vocabulary: event.target.value }))}
-                          className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                          placeholder="Danh sách từ vựng"
-                        />
+                        VOCABULARY (audio cho từng từ)
+                        <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+                          <div className="grid gap-2 md:grid-cols-3">
+                            <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                              Từ vựng
+                              <input
+                                type="text"
+                                value={vocabularyDraft.term}
+                                onChange={(event) => setVocabularyDraft((previous) => ({ ...previous, term: event.target.value }))}
+                                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                                placeholder="beaker"
+                              />
+                            </label>
+                            <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                              Nghĩa/giải thích
+                              <input
+                                type="text"
+                                value={vocabularyDraft.translation}
+                                onChange={(event) =>
+                                  setVocabularyDraft((previous) => ({ ...previous, translation: event.target.value }))
+                                }
+                                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                                placeholder="cốc đong"
+                              />
+                            </label>
+                            <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                              File MP3 (upload lên backend)
+                              <input
+                                key={vocabularyInputKey}
+                                type="file"
+                                accept="audio/mpeg"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  setVocabularyDraft((previous) => ({
+                                    ...previous,
+                                    file: file || null,
+                                    audioFileName: file?.name || ''
+                                  }));
+                                }}
+                                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              />
+                              {vocabularyDraft.audioFileName && (
+                                <span className="text-[11px] font-medium text-brand">Sẽ lưu file: {vocabularyDraft.audioFileName}</span>
+                              )}
+                            </label>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-600">
+                            <p>Âm thanh là file mp3 được upload lên backend. Dán file, hệ thống lưu tên file để phát lại.</p>
+                            <button
+                              type="button"
+                              onClick={() => addVocabularyItem(vocabularyDraft)}
+                              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+                            >
+                              + Thêm từ
+                            </button>
+                          </div>
+                          {lessonForm.vocabularyItems.length > 0 && (
+                            <ul className="space-y-2 text-xs text-slate-800">
+                              {lessonForm.vocabularyItems.map((item, index) => (
+                                <li
+                                  key={`${item.term}-${index}`}
+                                  className="flex items-center justify-between rounded-md bg-white px-3 py-2 shadow-sm"
+                                >
+                                  <div className="space-y-0.5">
+                                    <p className="font-semibold text-slate-900">{item.term}</p>
+                                    <p className="text-slate-700">{item.translation || '—'}</p>
+                                    {item.audioFileName && <p className="text-[11px] text-brand">MP3: {item.audioFileName}</p>}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeVocabularyItem(index)}
+                                    className="text-xs font-semibold text-rose-600 hover:text-rose-500"
+                                  >
+                                    Xóa
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                            Ghi chú (tùy chọn)
+                            <textarea
+                              value={lessonForm.vocabularyNote}
+                              onChange={(event) => setLessonForm((previous) => ({ ...previous, vocabularyNote: event.target.value }))}
+                              className="min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              placeholder="Danh sách tổng quan hoặc hướng dẫn phát âm"
+                            />
+                          </label>
+                        </div>
                       </label>
                       <label className="grid gap-1 text-sm text-slate-700">
                         QUIZZES
@@ -1149,15 +1295,33 @@ const AdminPanelPage = ({ user, onProfileUpdate, onLogout }) => {
                           placeholder="Bài tập/quiz hoặc hướng dẫn luyện tập"
                         />
                       </label>
-                      <label className="grid gap-1 text-sm text-slate-700">
-                        DIALOGUE
-                        <textarea
-                          value={lessonForm.dialogue}
-                          onChange={(event) => setLessonForm((previous) => ({ ...previous, dialogue: event.target.value }))}
-                          className="min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
-                          placeholder="Hội thoại mẫu"
-                        />
-                      </label>
+                      <div className="grid gap-2 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">DIALOGUE (song ngữ)</p>
+                        <div className="grid gap-2">
+                          <label className="grid gap-1">
+                            English
+                            <textarea
+                              value={lessonForm.dialogueEnglish}
+                              onChange={(event) =>
+                                setLessonForm((previous) => ({ ...previous, dialogueEnglish: event.target.value }))
+                              }
+                              className="min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              placeholder="Short dialogue in English"
+                            />
+                          </label>
+                          <label className="grid gap-1">
+                            Vietnamese
+                            <textarea
+                              value={lessonForm.dialogueVietnamese}
+                              onChange={(event) =>
+                                setLessonForm((previous) => ({ ...previous, dialogueVietnamese: event.target.value }))
+                              }
+                              className="min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+                              placeholder="Hội thoại tiếng Việt"
+                            />
+                          </label>
+                        </div>
+                      </div>
                     </div>
                     <button
                       type="submit"

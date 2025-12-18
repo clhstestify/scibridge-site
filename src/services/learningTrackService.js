@@ -2,6 +2,48 @@ import { v4 as uuid } from 'uuid';
 
 const STORAGE_KEY = 'scibridge-learning-tracks';
 
+function normalizeDialogue(dialogue = '') {
+  if (typeof dialogue === 'string') {
+    return { english: dialogue, vietnamese: '' };
+  }
+
+  if (dialogue && typeof dialogue === 'object') {
+    const english = dialogue.english ?? dialogue.en ?? '';
+    const vietnamese = dialogue.vietnamese ?? dialogue.vi ?? '';
+
+    if (english || vietnamese) {
+      return { english, vietnamese };
+    }
+  }
+
+  return { english: '', vietnamese: '' };
+}
+
+function normalizeVocabulary(vocabulary = '') {
+  // Accept legacy string content or new structured items
+  if (typeof vocabulary === 'string') {
+    return { items: [], note: vocabulary };
+  }
+
+  const toItem = (entry = {}) => ({
+    term: entry.term || entry.word || '',
+    translation: entry.translation || entry.meaning || entry.definition || '',
+    audioFileName: entry.audioFileName || entry.audio || entry.fileName || entry.audioUrl || ''
+  });
+
+  if (Array.isArray(vocabulary)) {
+    return { items: vocabulary.map(toItem), note: '' };
+  }
+
+  if (vocabulary && typeof vocabulary === 'object') {
+    const items = Array.isArray(vocabulary.items) ? vocabulary.items.map(toItem) : [];
+    const note = vocabulary.note || vocabulary.text || vocabulary.description || '';
+    return { items, note };
+  }
+
+  return { items: [], note: '' };
+}
+
 const defaultTracks = [
   {
     id: 'efs-grade-10',
@@ -32,16 +74,36 @@ const defaultTracks = [
             sections: {
               vocabulary:
                 lessonNumber === 7 && chapterNumber === 4
-                  ? '10 thuật ngữ chính: beaker, observe, mixture, stir, measure, spill, safety goggles, reaction, timer, record.'
-                  : 'Thêm từ vựng chính tại đây.',
+                  ? {
+                      items: [
+                        {
+                          term: 'beaker',
+                          translation: 'cốc đong thủy tinh',
+                          audioFileName: 'sample-beaker.mp3'
+                        },
+                        {
+                          term: 'observe',
+                          translation: 'quan sát',
+                          audioFileName: 'sample-observe.mp3'
+                        }
+                      ],
+                      note: '10 thuật ngữ chính: beaker, observe, mixture, stir, measure, spill, safety goggles, reaction, timer, record.'
+                    }
+                  : { items: [], note: 'Thêm từ vựng chính tại đây.' },
               quizzes:
                 lessonNumber === 7 && chapterNumber === 4
                   ? 'Viết 5 câu mô tả các bước của thí nghiệm pha dung dịch muối. Đọc to và thu âm lại.'
                   : 'Thêm bài tập/quiz hoặc hướng dẫn thực hành.',
               dialogue:
                 lessonNumber === 7 && chapterNumber === 4
-                  ? 'A: “Which tool do we need?” B: “The beaker and the timer so we can record the reaction.”'
-                  : 'Viết đoạn hội thoại ngắn để luyện nói.'
+                  ? {
+                      english: 'A: “Which tool do we need?” B: “The beaker and the timer so we can record the reaction.”',
+                      vietnamese: 'A: “Chúng ta cần dụng cụ nào?” B: “Cốc đong và đồng hồ bấm giờ để ghi lại phản ứng.”'
+                    }
+                  : {
+                      english: 'Write a short practice dialogue for this lesson.',
+                      vietnamese: 'Viết đoạn hội thoại ngắn để luyện nói.'
+                    }
             }
           };
         })
@@ -52,9 +114,9 @@ const defaultTracks = [
 
 function normalizeSections(sections = {}) {
   const normalized = {
-    vocabulary: '',
+    vocabulary: normalizeVocabulary(sections.vocabulary),
     quizzes: '',
-    dialogue: '',
+    dialogue: normalizeDialogue(sections.dialogue),
     ...sections
   };
 
@@ -66,9 +128,11 @@ function normalizeSections(sections = {}) {
     normalized.quizzes = sections.practice;
   }
 
-  if (!normalized.dialogue && sections.conversation) {
-    normalized.dialogue = sections.conversation;
-  }
+  const rawVocabulary = sections.vocabulary ?? sections.vocab ?? normalized.vocabulary;
+  normalized.vocabulary = normalizeVocabulary(rawVocabulary);
+
+  const rawDialogue = sections.dialogue ?? sections.conversation ?? normalized.dialogue;
+  normalized.dialogue = normalizeDialogue(rawDialogue);
 
   return normalized;
 }

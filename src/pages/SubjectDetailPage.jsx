@@ -8,6 +8,7 @@ import { getLearningTracks } from '../services/learningTrackService.js';
 const SubjectDetailPage = () => {
   const { subjectId } = useParams();
   const { t } = useLanguage();
+  const audioBaseUrl = (import.meta.env.VITE_AUDIO_BASE_URL || '/uploads').replace(/\/$/, '');
   const [tracks, setTracks] = useState([]);
   const [selectedGrade, setSelectedGrade] = useState('10');
   const [selectedChapterId, setSelectedChapterId] = useState(null);
@@ -38,6 +39,33 @@ const SubjectDetailPage = () => {
 
   const gradeLevels = ['10', '11', '12'];
 
+  const normalizeDialogue = (dialogue) => {
+    if (typeof dialogue === 'string') {
+      return { english: dialogue, vietnamese: '' };
+    }
+
+    return {
+      english: dialogue?.english || dialogue?.en || '',
+      vietnamese: dialogue?.vietnamese || dialogue?.vi || ''
+    };
+  };
+
+  const normalizeVocabulary = (vocabulary) => {
+    if (!vocabulary) return { items: [], note: '' };
+    if (typeof vocabulary === 'string') return { items: [], note: vocabulary };
+    if (Array.isArray(vocabulary)) return { items: vocabulary, note: '' };
+    if (typeof vocabulary === 'object') {
+      const items = Array.isArray(vocabulary.items) ? vocabulary.items : [];
+      return { items, note: vocabulary.note || '' };
+    }
+    return { items: [], note: '' };
+  };
+
+  const getAudioSrc = (fileName) => {
+    if (!fileName) return '';
+    return `${audioBaseUrl}/${fileName}`;
+  };
+
   const subjectTracks = useMemo(() => {
     if (!subject) return [];
     const normalizedTitle = subject.title.toLowerCase();
@@ -64,6 +92,9 @@ const SubjectDetailPage = () => {
   const activeChapter = chapters.find((chapter) => chapter.id === selectedChapterId) || chapters[0];
   const lessons = activeChapter?.lessons ?? [];
   const activeLesson = lessons.find((lesson) => lesson.id === selectedLessonId) || lessons[0];
+  const activeDialogue = normalizeDialogue(activeLesson?.sections?.dialogue);
+  const hasActiveDialogue = Boolean(activeDialogue.english || activeDialogue.vietnamese);
+  const activeVocabulary = normalizeVocabulary(activeLesson?.sections?.vocabulary);
 
   const handleViewLessons = (grade, track) => {
     setSelectedGrade(grade);
@@ -242,7 +273,31 @@ const SubjectDetailPage = () => {
                 <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">VOCABULARY</p>
-                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.vocabulary || '-'}</p>
+                    {activeVocabulary.items.length ? (
+                      <div className="mt-1 space-y-2">
+                        {activeVocabulary.items.map((item, index) => (
+                            <div
+                              key={`${item.term}-${index}`}
+                              className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm"
+                            >
+                              <div>
+                              <p className="text-sm font-semibold text-slate-900">{item.term}</p>
+                              <p className="text-xs text-slate-700">{item.translation || '-'}</p>
+                            </div>
+                            {item.audioFileName && (
+                              <audio controls className="w-28">
+                                <source src={getAudioSrc(item.audioFileName)} type="audio/mpeg" />
+                              </audio>
+                            )}
+                          </div>
+                        ))}
+                        {activeVocabulary.note && (
+                          <p className="rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-700">{activeVocabulary.note}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-1 whitespace-pre-line">{activeVocabulary.note || '-'}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">QUIZZES</p>
@@ -250,7 +305,24 @@ const SubjectDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">DIALOGUE</p>
-                    <p className="mt-1 whitespace-pre-line">{activeLesson.sections?.dialogue || '-'}</p>
+                    {hasActiveDialogue ? (
+                      <div className="mt-1 space-y-2">
+                        {activeDialogue.english && (
+                          <div className="rounded-xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">English</p>
+                            <p className="whitespace-pre-line text-sm text-slate-800">{activeDialogue.english}</p>
+                          </div>
+                        )}
+                        {activeDialogue.vietnamese && (
+                          <div className="rounded-xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">Tiếng Việt</p>
+                            <p className="whitespace-pre-line text-sm text-slate-800">{activeDialogue.vietnamese}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-1 whitespace-pre-line">{t('subjectsPage.noDialogue', '-')}</p>
+                    )}
                   </div>
                 </div>
               )}
