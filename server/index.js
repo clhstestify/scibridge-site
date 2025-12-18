@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
 import { readUsers, writeUsers } from './utils/userStore.js';
 import { readAdminData, writeAdminData } from './utils/adminStore.js';
 import { readForumData, writeForumData } from './utils/forumStore.js';
@@ -21,6 +24,9 @@ const port = process.env.PORT || 4000;
 const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()) ?? ['http://localhost:5173'];
 const geminiApiKey = process.env.GEMINI_API_KEY;
 const geminiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distPath = path.resolve(__dirname, '../dist');
+const indexHtmlPath = path.join(distPath, 'index.html');
 
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
@@ -601,6 +607,16 @@ app.patch(
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', authMode: 'username' });
 });
+
+if (fs.existsSync(indexHtmlPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'Endpoint not found.' });
+    }
+    return res.sendFile(indexHtmlPath);
+  });
+}
 
 app.listen(port, () => {
   console.log(`SciBridge API server running on http://localhost:${port}`);
