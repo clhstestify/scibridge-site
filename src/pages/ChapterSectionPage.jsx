@@ -8,7 +8,7 @@ import { buildAudioSrc, normalizeDialogue, normalizeVocabulary } from '../utils/
 const ChapterSectionPage = () => {
   const { subjectId, gradeLevel, chapterId, sectionKey } = useParams();
   const { t } = useLanguage();
-const audioBaseUrl = import.meta.env.VITE_AUDIO_BASE_URL || '/uploads/audio';
+  const audioBaseUrl = import.meta.env.VITE_AUDIO_BASE_URL || '/uploads';
   const { subject, chapter, quizQuestions } = useChapterContent(subjectId, gradeLevel, chapterId);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizIndex, setQuizIndex] = useState(0);
