@@ -6,6 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { readUsers, writeUsers } from './utils/userStore.js';
 import { readAdminData, writeAdminData } from './utils/adminStore.js';
 import { readForumData, writeForumData } from './utils/forumStore.js';
+import {
+  addChapterToTrack,
+  addLessonToChapter,
+  addLearningTrack,
+  addQuizQuestionToTrack,
+  readLearningTracks
+} from './utils/learningTrackStore.js';
 
 dotenv.config();
 
@@ -200,6 +207,16 @@ app.post('/api/auth/login', async (req, res) => {
     message: 'Signed in successfully.',
     user: sanitizeUser(user)
   });
+});
+
+app.get('/api/learning-tracks', async (_req, res) => {
+  try {
+    const data = await readLearningTracks();
+    res.json({ tracks: data.tracks });
+  } catch (error) {
+    console.error('Unable to load learning tracks', error);
+    res.status(500).json({ message: 'Could not load learning tracks.' });
+  }
 });
 
 app.get('/api/forum/posts', async (_req, res) => {
@@ -405,6 +422,146 @@ app.post(
     await writeAdminData(adminData);
 
     res.status(201).json({ message: 'Practice set saved.', practiceSet });
+  }
+);
+
+app.post(
+  '/api/admin/learning-tracks',
+  authenticateRequest,
+  requireRole('admin', 'teacher'),
+  async (req, res) => {
+    const { subject, gradeLevel, summary, heroImage, documentUrl, youtubeUrl } = req.body ?? {};
+
+    if (!subject?.trim() || !gradeLevel?.trim() || !summary?.trim()) {
+      return res.status(400).json({ message: 'Subject, grade level, and summary are required.' });
+    }
+
+    try {
+      const track = await addLearningTrack({
+        subject: subject.trim(),
+        gradeLevel: gradeLevel.trim(),
+        summary: summary.trim(),
+        heroImage: heroImage?.trim() || '',
+        documentUrl: documentUrl?.trim() || '',
+        youtubeUrl: youtubeUrl?.trim() || ''
+      });
+
+      res.status(201).json({ message: 'Learning track created.', track });
+    } catch (error) {
+      console.error('Unable to save learning track', error);
+      res.status(500).json({ message: 'Could not save learning track.' });
+    }
+  }
+);
+
+app.post(
+  '/api/admin/learning-tracks/:trackId/chapters',
+  authenticateRequest,
+  requireRole('admin', 'teacher'),
+  async (req, res) => {
+    const { title, description } = req.body ?? {};
+    if (!title?.trim()) {
+      return res.status(400).json({ message: 'Chapter title is required.' });
+    }
+
+    try {
+      const { track, chapter } = await addChapterToTrack(req.params.trackId, {
+        title: title.trim(),
+        description: description?.trim() || ''
+      });
+
+      if (!track) {
+        return res.status(404).json({ message: 'Learning track not found.' });
+      }
+
+      res.status(201).json({ message: 'Chapter saved.', track, chapter });
+    } catch (error) {
+      console.error('Unable to save chapter', error);
+      res.status(500).json({ message: 'Could not save chapter.' });
+    }
+  }
+);
+
+app.post(
+  '/api/admin/learning-tracks/:trackId/chapters/:chapterId/lessons',
+  authenticateRequest,
+  requireRole('admin', 'teacher'),
+  async (req, res) => {
+    const { title, sections } = req.body ?? {};
+
+    if (!title?.trim()) {
+      return res.status(400).json({ message: 'Lesson title is required.' });
+    }
+
+    const vocabularyItems = sections?.vocabulary?.items || [];
+    const vocabularyNote = sections?.vocabulary?.note || sections?.vocabulary || '';
+
+    if (!Array.isArray(vocabularyItems) || (vocabularyItems.length === 0 && !vocabularyNote.trim())) {
+      return res.status(400).json({ message: 'At least one vocabulary item or note is required.' });
+    }
+
+    try {
+      const { track, chapter, lesson } = await addLessonToChapter(req.params.trackId, req.params.chapterId, {
+        title: title.trim(),
+        sections: {
+          vocabulary: {
+            items: vocabularyItems,
+            note: vocabularyNote
+          },
+          quizzes: sections?.quizzes || '',
+          dialogue: sections?.dialogue || {}
+        }
+      });
+
+      if (!track) {
+        return res.status(404).json({ message: 'Learning track not found.' });
+      }
+      if (!chapter) {
+        return res.status(404).json({ message: 'Chapter not found.' });
+      }
+
+      res.status(201).json({ message: 'Lesson saved.', track, chapter, lesson });
+    } catch (error) {
+      console.error('Unable to save lesson', error);
+      res.status(500).json({ message: 'Could not save lesson.' });
+    }
+  }
+);
+
+app.post(
+  '/api/admin/learning-tracks/:trackId/quizzes',
+  authenticateRequest,
+  requireRole('admin', 'teacher'),
+  async (req, res) => {
+    const { prompt, options, correctIndex } = req.body ?? {};
+
+    const cleanedPrompt = prompt?.trim();
+    const cleanedOptions = Array.isArray(options)
+      ? options.map((option) => option?.toString().trim()).filter(Boolean)
+      : [];
+
+    if (!cleanedPrompt || cleanedOptions.length < 2) {
+      return res.status(400).json({ message: 'Prompt and at least two answer choices are required.' });
+    }
+
+    const boundedIndex = Math.min(Math.max(Number(correctIndex) || 0, 0), cleanedOptions.length - 1);
+
+    try {
+      const { track } = await addQuizQuestionToTrack(req.params.trackId, {
+        prompt: cleanedPrompt,
+        options: cleanedOptions,
+        correctIndex: boundedIndex
+      });
+
+      if (!track) {
+        return res.status(404).json({ message: 'Learning track not found.' });
+      }
+
+      res.status(201).json({ message: 'Quiz question attached.', track });
+    } catch (error) {
+      console.error('Unable to save quiz question', error);
+      res.status(500).json({ message: 'Could not save quiz question.' });
+    }
   }
 );
 
