@@ -181,12 +181,24 @@ export async function addLesson(user, trackId, chapterId, lesson) {
   return { track: normalizeTrack(payload.track), chapter: payload.chapter, lesson: payload.lesson };
 }
 
-export async function addQuizQuestion(user, trackId, question) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/learning-tracks/${trackId}/quizzes`, {
-    method: 'POST',
-    headers: buildHeaders(user),
-    body: JSON.stringify(question)
+export function removeLesson(trackId, chapterId, lessonId) {
+  const tracks = readFromStorage();
+  const updated = tracks.map((track) => {
+    if (track.id !== trackId) return track;
+    const chapters = (track.chapters || []).map((chapter) => {
+      if (chapter.id !== chapterId) return chapter;
+      return {
+        ...chapter,
+        lessons: (chapter.lessons || []).filter((lesson) => lesson.id !== lessonId)
+      };
+    });
+    return { ...track, chapters };
   });
-  const payload = await handleResponse(response);
-  return { track: normalizeTrack(payload.track) };
+  persist(updated);
+  return updated;
+}
+
+export function clearLearningTracks() {
+  if (!isBrowser) return;
+  window.localStorage.removeItem(STORAGE_KEY);
 }

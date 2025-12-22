@@ -1,5 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { FiBookOpen, FiCheckCircle, FiFolder, FiLayers, FiMessageSquare } from 'react-icons/fi';
+import { useLanguage } from '../context/LanguageContext.jsx';
+import { useChapterContent } from '../hooks/useChapterContent.js';
+import { normalizeDialogue, normalizeVocabulary } from '../utils/sectionContent.js';
 import { FiBookOpen, FiCheckCircle, FiFolder, FiLayers, FiMessageSquare, FiVolume2 } from 'react-icons/fi';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { useChapterContent } from '../hooks/useChapterContent.js';
@@ -254,6 +258,22 @@ const audioBaseUrl = import.meta.env.VITE_AUDIO_BASE_URL || '/uploads/audio';
                           <span className="col-span-3">{t('chapterSectionPage.definitionColumn', 'Definition')}</span>
                         </div>
                         <div className="divide-y divide-slate-200 text-sm text-slate-800">
+                          {vocabulary.items.map((item) => (
+                            <div key={`${lesson.id}-${item.term}`} className="grid grid-cols-5 gap-4 px-4 py-4">
+                              <div className="col-span-2 space-y-1">
+                                <p className="text-base font-semibold text-slate-900">{item.term}</p>
+                                {item.pronunciation && (
+                                  <p className="text-xs font-medium italic text-slate-600">{item.pronunciation}</p>
+                                )}
+                              </div>
+                              <div className="col-span-3 space-y-1">
+                                <p className="text-sm text-slate-800">
+                                  {item.translation || t('chapterPage.noTranslation', 'Chưa có nghĩa')}
+                                </p>
+                                {item.definition && <p className="text-xs text-slate-600">{item.definition}</p>}
+                              </div>
+                            </div>
+                          ))}
                           {vocabulary.items.map((item) => {
                             const audioSrc = buildAudioSrc(audioBaseUrl, item.audioFileName);
                             return (

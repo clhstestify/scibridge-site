@@ -5,6 +5,7 @@ export const normalizeDialogue = (dialogue) => {
 
   return {
     english: dialogue?.english || dialogue?.en || '',
+    vietnamese: dialogue?.vietnamese || dialogue?.vi || ''
     vietnamese: dialogue?.vietnamese || dialogue?.vi || '',
     audioFileName: dialogue?.audioFileName || dialogue?.audio || dialogue?.audioUrl || ''
   };
